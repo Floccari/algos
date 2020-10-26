@@ -1,0 +1,30 @@
+network rete3:
+	automatons: s, b;
+	events: op, cl;
+
+	l s -> b;
+end
+
+automaton s:
+	states: 0, 1;
+	initial: 0;
+
+	s1 0 -> 1 obs "act" out "op(l)";
+	s2 1 -> 0 obs "sby" out "cl(l)";
+	s3 0 -> 0 rel "f1" out "cl(l)";
+	s4 1 -> 1 rel "f2" out "op(l)";
+end
+
+automaton b:
+	states: 0, 1;
+	initial: 0;
+
+	b1 0 -> 1 obs "opn" in "op(l)";
+	b2 1 -> 0 obs "cls" in "cl(l)";
+	b3 0 -> 0 rel "f3" in "op(l)";
+	b4 1 -> 1 rel "f4" in "cl(l)";
+	b5 0 -> 0 obs "nop" in "cl(l)";
+	b6 1 -> 1 obs "nop" in "op(l)";
+	b7 0 -> 1 obs "opn" rel "f5" in "cl(l)";
+	b8 1 -> 0 obs "cls" rel "f6" in "op(l)";
+end	
