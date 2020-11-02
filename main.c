@@ -28,6 +28,7 @@ int main(int argc, char **argv) {
 	printf("\ttest\tTest network loading and serialization\n");
 	printf("\tdot\tOutput dot representation of the network\n");
 	printf("\tbspace\tCompute the behavioral space of the network\n");
+	printf("\tcomp\tCompute a behavioral subspace of the network given an observation\n");	
 	
 	exit(0);
     }
@@ -55,8 +56,16 @@ int main(int argc, char **argv) {
 	yyparse();
 
 	struct network *bs_net = bspace_compute(net);
-	network_print_subs(stdout, net, bs_net);
+	network_print_subs(stdout, net, bs_net, false);
 	network_serialize(stdout, bs_net);
+
+	exit(0);
+    } else if (strcmp(argv[1], "comp") == 0) {
+	yyparse();
+
+	struct network *c_net = comp_compute(net);
+	network_print_subs(stdout, net, c_net, true);
+	network_serialize(stdout, c_net);
 
 	exit(0);
     } else 

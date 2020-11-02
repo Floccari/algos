@@ -25,12 +25,22 @@ struct action {
     struct link *link;
 };
 
+enum label_types {
+    OBSERVABILITY,
+    RELEVANCE
+};
+
+struct label {
+    char *id;
+    enum label_types type;
+};
+
 struct transition {
     char *id;
     struct action *act_in;
     struct list *act_out;
-    char *obs;
-    char *rel;
+    struct label *obs;
+    struct label *rel;
     struct state *src;
     struct state *dest;
 };
@@ -57,6 +67,9 @@ struct context {
     int lk_amount;
     struct state **states;    // current state of every automaton
     char **buffers;    // link buffers
+    struct list *current_obs;
+    int obs_index;
+    // 4 bytes
 };
 
 struct network {
@@ -66,11 +79,14 @@ struct network {
     struct list *automatons;
     struct list *events;
     struct list *links;
+    struct list *observation;    // stored in REVERSE ORDER
 };
 
 struct state *state_create(char *id);
 
 struct action *action_create();
+
+struct label *label_create(char *id, enum label_types type);
 
 struct transition *transition_create(char *id);
 
@@ -94,7 +110,7 @@ struct network *network_create(char *id);
 
 void network_serialize(FILE *fc, struct network *net);
 
-void network_print_subs(FILE *fc, struct network *net, struct network *comp_net);
+void network_print_subs(FILE *fc, struct network *net, struct network *comp_net, bool comp);
 
 void network_to_dot(FILE *fc, struct network *net);
 

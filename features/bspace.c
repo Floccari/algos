@@ -5,7 +5,8 @@ int tr_amount;
 struct network *bs_net;
 struct map_item **ct_hashmap;
 
-void bspace_step(struct state *current_bs_state);
+struct network *compute(struct network *net, bool comp);
+void step(struct state *current_bs_state, bool comp);
 void prune(struct network *net);
 void dfs_visit(struct state *st);
 
@@ -13,14 +14,33 @@ char *state_id_create();
 char *transition_id_create();
 
 
+struct network *comp_compute(struct network *net) {
+    return compute(net, true);
+}
+
 struct network *bspace_compute(struct network *net) {
+    return compute(net, false);
+}
+
+
+struct network *compute(struct network *net, bool comp) {
     ct_hashmap = hashmap_create();
-    bs_net = network_create("bs_network");
+
+    if (comp)
+	bs_net = network_create("comp_network");
+    else
+	bs_net = network_create("bs_network");
+    
     st_amount = 0;
     tr_amount = 0;
 
     /*** populate bs_net with a single automaton ***/
-    struct automaton *bs_aut = automaton_create("bspace");
+    struct automaton *bs_aut;
+
+    if (comp)
+	bs_aut = automaton_create("comp");
+    else
+	bs_aut = automaton_create("bspace");	
 
     bs_net->automatons = head_insert(bs_net->automatons,
 				       list_create(bs_aut));
@@ -49,11 +69,20 @@ struct network *bspace_compute(struct network *net) {
     
     memset(c->buffers, 0, sizeof (char *) * net->lk_amount);
 
+    if (comp && !net->observation) {
+	/*** there is no observation, abort ***/
+        fprintf(stderr, "No observation given\n");
+	exit(-1);    // exits here
+    }
+    
+    c->current_obs = get_last(net->observation);    // since it's stored in REVERSE ORDER
+
     /*** create initial state and insert it ***/
     struct state *st = state_create(state_id_create());
     st->context = c;
 
-    st->final = true;    // since all links are empty
+    if (!comp)
+	st->final = true;    // since all links are empty
 
     bs_aut->states = head_insert(bs_aut->states,
 				   list_create(st));
@@ -64,7 +93,7 @@ struct network *bspace_compute(struct network *net) {
 						   CONTEXT, c, st));
 
     /*** recursive step ***/
-    bspace_step(st);
+    step(st, comp);
 
     /*** pruning ***/
     prune(bs_net);
@@ -76,7 +105,7 @@ struct network *bspace_compute(struct network *net) {
 }
 
 
-void bspace_step(struct state *current_bs_state) {
+void step(struct state *current_bs_state, bool comp) {
     struct context *c = current_bs_state->context;
 
     /*** foreach current state ***/
@@ -115,6 +144,26 @@ void bspace_step(struct state *current_bs_state) {
 		    new_context->buffers[ac->link->index] = ac->event;
 
 		    ls = ls->next;
+		}
+
+		if (comp) {
+		    /*** skip transition if not applicable ***/
+		    struct label *lab = NULL;
+		    
+		    if (new_context->current_obs)
+			lab = (struct label *) new_context->current_obs->value;
+		    
+		    if (tr->obs) {
+			if (!lab ||
+			    lab->id != tr->obs->id) {
+			    /*** skip transition ***/
+			    context_destroy(new_context);
+			    goto NEXT_TRANSITION;
+			}
+			
+			new_context->current_obs = new_context->current_obs->prev;
+			new_context->obs_index++;
+		    }
 		}
 
 		/*** create the new transition and update source state ***/
@@ -164,6 +213,9 @@ void bspace_step(struct state *current_bs_state) {
 			break;
 		    }
 
+		if (comp && new_context->current_obs)
+		    new_state->final = false;    // we still have labels left
+
 		/*** add new state to the automaton ***/
 		lt = list_create(new_state);
 		bs_aut->states = head_insert(bs_aut->states, lt);
@@ -179,7 +231,7 @@ void bspace_step(struct state *current_bs_state) {
 							       CONTEXT, new_context, new_state));
 
 		/*** explore the new state completely ***/
-		bspace_step(new_state);
+		step(new_state, comp);
 	    }
 
 	NEXT_TRANSITION:

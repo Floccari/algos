@@ -13,6 +13,7 @@ enum types {
     AUTOMATON,
     LINK,
     EVENT,
+    LABEL,
     CONTEXT
 };
 

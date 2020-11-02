@@ -22,3 +22,5 @@ automaton c3:
 	  t3b 31 -> 30 in "e3(l3)";
 	  t3c 31 -> 31 rel "f" in "e3(l3)";
 end
+
+obs: o3, o2;

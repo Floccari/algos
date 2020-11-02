@@ -15,6 +15,7 @@ void duperror();
 void nferror();
 void lkinerror();
 void lkouterror();
+void laberror();
 
 void yyset_in(FILE *in);
 
@@ -24,6 +25,7 @@ struct link *ln = NULL;
 struct action *act = NULL;
 struct state *st;
 struct transition *tr = NULL;
+struct label *lab = NULL;
 
 struct map_item *item = NULL;
 struct map_item **hashmap;
@@ -36,7 +38,7 @@ struct map_item **hashmap;
 
 %%
 
-program : net-decl aut-decl
+program : net-decl aut-decl observation
 	;
 
 net-decl : NETWORK ID {net = network_create(lexval);}
@@ -246,14 +248,24 @@ tr : ID {item = hashmap_search(hashmap, lexval, TRANSITION);
      obs-decl rel-decl in-decl out-decl ';'
    ;
 
-obs-decl : OBS '"' ID {// tr initialized in rule "tr"
-	       	       tr->obs = lexval;}
+obs-decl : OBS '"' ID {lab = label_create(lexval, OBSERVABILITY);
+
+		       hashmap_insert(hashmap,
+				      map_item_create(lab->id, LABEL, lab));
+
+	       	       // tr initialized in rule "tr"
+	       	       tr->obs = lab;}
 	   '"'
 	 | {/* eps */}
 	 ;
 
-rel-decl : REL '"' ID {// tr initialized in rule "tr"
-	       	       tr->rel = lexval;}
+rel-decl : REL '"' ID {lab = label_create(lexval, RELEVANCE);
+
+	               hashmap_insert(hashmap,
+				      map_item_create(lab->id, LABEL, lab));
+
+	       	       // tr initialized in rule "tr"
+	       	       tr->rel = lab;}
 	   '"'
 	 | {/* eps */}
 	 ;
@@ -331,6 +343,27 @@ action-out : ID {act = action_create();
        	     ')'
            ;
 
+observation : OBS ':' obs-label-list ';'
+	    | {/* eps */}
+	    ;
+
+obs-label-list : obs-label ',' obs-label-list
+	       | obs-label
+	       ;
+
+obs-label : ID {item = hashmap_search(hashmap, lexval, LABEL);
+
+      	        if (!item)
+		    nferror();    // exits here
+
+		lab = (struct label *) item->value;
+		
+		if (lab->type != OBSERVABILITY)
+		    laberror();    // exits here
+
+		struct list *l = list_create(lab);
+		net->observation = head_insert(net->observation, l);}
+	  ;
 
 %%
 
@@ -359,3 +392,7 @@ void lkouterror() {
     exit(-1);
 }
 
+void laberror() {
+    fprintf(stderr, "line %d: \"%s\" label is not an observable one\n", line, yytext);
+    exit(-1);
+}

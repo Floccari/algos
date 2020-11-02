@@ -27,4 +27,6 @@ automaton b:
 	b6 1 -> 1 obs "nop" in "op(l)";
 	b7 0 -> 1 obs "opn" rel "f5" in "cl(l)";
 	b8 1 -> 0 obs "cls" rel "f6" in "op(l)";
-end	
+end
+
+obs: act, sby, nop;

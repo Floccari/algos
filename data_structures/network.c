@@ -16,6 +16,14 @@ struct action *action_create() {
     return act;
 }
 
+struct label *label_create(char *id, enum label_types type) {
+    struct label *l = malloc(sizeof (struct label));
+    l->id = id;
+    l->type = type;
+
+    return l;
+}
+
 struct transition *transition_create(char *id) {
     struct transition *tr = malloc(sizeof (struct transition));
     memset(tr, 0, sizeof (struct transition));
@@ -55,6 +63,8 @@ struct context *context_copy(struct context *c) {
     struct context *copy = context_create(c->aut_amount, c->lk_amount);
     memcpy(copy->states, c->states, sizeof (struct state *) * c->aut_amount);
     memcpy(copy->buffers, c->buffers, sizeof (char *) * c->lk_amount);
+    copy->current_obs = c->current_obs;
+    copy->obs_index = c->obs_index;
 
     return copy;
 }
@@ -83,7 +93,8 @@ char *context_digest(struct context *c) {
 
 bool context_compare(struct context *c1, struct context *c2) {
     if (memcmp(c1->states, c2->states, sizeof (struct state *) * c1->aut_amount) == 0 &&
-	memcmp(c1->buffers, c2->buffers, sizeof (char *) * c1->lk_amount) == 0)
+	memcmp(c1->buffers, c2->buffers, sizeof (char *) * c1->lk_amount) == 0 &&
+	c1->obs_index == c2->obs_index)
 	return true;
 
     return false;
@@ -218,10 +229,10 @@ void network_serialize(FILE *fc, struct network *net) {
 	    fprintf(fc, "\t%s %s -> %s", tr->id, tr->src->id, tr->dest->id);
 
 	    if (tr->obs)
-		fprintf(fc, " obs \"%s\"", tr->obs);
+		fprintf(fc, " obs \"%s\"", tr->obs->id);
 
 	    if (tr->rel)
-		fprintf(fc, " rel \"%s\"", tr->rel);
+		fprintf(fc, " rel \"%s\"", tr->rel->id);
 
 	    if (tr->act_in)
 		fprintf(fc, " in \"%s(%s)\"", tr->act_in->event, tr->act_in->link->id);
@@ -257,9 +268,31 @@ void network_serialize(FILE *fc, struct network *net) {
 
 	l = l->prev;
     }
+
+    /*** observation ***/
+    l = get_last(net->observation);
+
+    if (l) {
+	struct label *lab = l->value;
+	
+	fprintf(fc, "\n");
+	fprintf(fc, "obs: %s", lab->id);
+
+	l = l->prev;
+	
+	while (l) {
+	    lab = l->value;
+	    
+	    fprintf(fc, ", %s", lab->id);
+
+	    l = l->prev;
+	}
+
+	fprintf(fc, ";\n");
+    }
 }
 
-void network_print_subs(FILE *fc, struct network *net, struct network *comp_net) {
+void network_print_subs(FILE *fc, struct network *net, struct network *comp_net, bool comp) {
     fprintf(fc, "# SUBSTITUTIONS\n");
     fprintf(fc, "#");
 
@@ -286,6 +319,9 @@ void network_print_subs(FILE *fc, struct network *net, struct network *comp_net)
 	l = l->prev;
     }
 
+    if (comp)
+	fprintf(fc, "\t|\tindex");
+    
     fprintf(fc, "\n#\n");
 
     /*** contexts ***/
@@ -309,6 +345,10 @@ void network_print_subs(FILE *fc, struct network *net, struct network *comp_net)
 	for (int i = net->lk_amount - 1; i >= 0; i--)
 	    fprintf(fc, "\t%s", c->buffers[i]);
 
+	/*** index ***/
+	if (comp)
+	    fprintf(fc, "\t\t%d", c->obs_index);
+	
 	fprintf(fc, "\n");
 
 	l = l->prev;

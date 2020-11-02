@@ -1,4 +1,4 @@
-program -> net-decl aut-decl
+program -> net-decl aut-decl observation
 net-decl -> network id: aut-list ev-list link-list end
 aut-list -> automatons: aut-id-list;
 aut-id-list -> aut-id, aut-id-list | aut-id
@@ -23,3 +23,6 @@ action-in -> id(id)
 out-decl -> out "action-list" | eps
 action-list -> action-out, action-list | action-out
 action-out -> id(id)
+observation -> obs: obs-label-list; | eps
+obs-label-list -> obs-label, obs-label-list | obs-label
+obs-label -> id
