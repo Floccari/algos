@@ -2,7 +2,7 @@ CFLAGS := -g -Wall -Wextra
 
 default : program
 
-program : input/lexer.o input/parser.o data_structures/list.o data_structures/hashmap.o data_structures/network.o features/bspace.o main.o
+program : input/lexer.o input/parser.o data_structures/list.o data_structures/hashmap.o data_structures/network.o features/bspace.o features/diag.o main.o
 	cc $(CFLAGS) -o $@ $^
 
 input/lexer.o : input/lexer.c data_structures/list.h data_structures/hashmap.h data_structures/network.h
@@ -17,6 +17,8 @@ data_structures/network.o : data_structures/network.h data_structures/network.c
 
 features/bspace.o : features/bspace.h features/bspace.c data_structures/list.h data_structures/hashmap.h data_structures/network.h
 
+features/diag.o : features/diag.h features/diag.c data_structures/list.h data_structures/hashmap.h data_structures/network.h
+
 main.o : main.c features/bspace.h data_structures/list.h data_structures/hashmap.h data_structures/network.h
 
 input/lexer.c : input/lexer.lex input/parser.h data_structures/list.h data_structures/hashmap.h data_structures/network.h
@@ -28,7 +30,7 @@ input/parser.h input/parser.c : input/parser.y data_structures/list.h data_struc
 
 .PHONY : clean
 
-FILES := input/lexer.o input/parser.o data_structures/list.o data_structures/hashmap.o data_structures/network.o features/bspace.o main.o input/lexer.c input/parser.c input/parser.h program
+FILES := input/lexer.o input/parser.o data_structures/list.o data_structures/hashmap.o data_structures/network.o features/bspace.o features/diag.o main.o input/lexer.c input/parser.c input/parser.h program
 
 clean :
 	touch $(FILES)

@@ -84,11 +84,21 @@ struct network {
 
 struct state *state_create(char *id);
 
+void state_destroy(struct state *st);
+
+void state_detach(struct automaton *aut, struct state *st);
+
 struct action *action_create();
 
 struct label *label_create(char *id, enum label_types type);
 
 struct transition *transition_create(char *id);
+
+void transition_destroy(struct transition *tr);
+
+void transition_attach(struct automaton *aut, struct transition *tr);
+
+void transition_detach(struct automaton *aut, struct transition *tr);
 
 struct automaton *automaton_create(char *id);
 
@@ -113,5 +123,9 @@ void network_serialize(FILE *fc, struct network *net);
 void network_print_subs(FILE *fc, struct network *net, struct network *comp_net, bool comp);
 
 void network_to_dot(FILE *fc, struct network *net);
+
+char *state_id_create(int index);
+
+char *transition_id_create(int index);
 
 #endif

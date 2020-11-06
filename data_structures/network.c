@@ -9,6 +9,46 @@ struct state *state_create(char *id) {
     return st;
 }
 
+void state_destroy(struct state *st) {
+    free(st->id);
+
+    if (st->context)
+	free(st->context);
+
+    // state_detach already cleared tr_in and tr_out
+    
+    free(st);
+}
+
+void state_detach(struct automaton *aut, struct state *st) {
+    struct list *ls = st->tr_in;
+    
+    /*** remove all incoming transitions ***/
+    while (ls) {
+	struct transition *tr = (struct transition *) ls->value;
+
+	transition_detach(aut, tr);
+	transition_destroy(tr);
+
+	ls = ls->next;
+    }
+
+    ls = st->tr_out;
+
+    /*** remove all outgoing transitions ***/
+    while (ls) {
+	struct transition *tr = (struct transition *) ls->value;
+
+	transition_detach(aut, tr);
+	transition_destroy(tr);
+
+	ls = ls->next;
+    }
+
+    /*** remove state from the automaton ***/
+    aut->states = search_and_remove(aut->states, st);
+}
+
 struct action *action_create() {
     struct action *act = malloc(sizeof (struct action));
     memset(act, 0, sizeof (struct action));
@@ -30,6 +70,47 @@ struct transition *transition_create(char *id) {
     tr->id = id;
 
     return tr;
+}
+
+void transition_destroy(struct transition *tr) {
+    free(tr->id);
+    free(tr->act_in);
+
+    while (tr->act_out) {
+	free(tr->act_out->value);
+	tr->act_out = item_remove(tr->act_out, tr->act_out);
+    }
+
+    free(tr);
+}
+
+void transition_attach(struct automaton *aut, struct transition *tr) {
+    struct state *st = tr->src;
+
+    st->tr_out = head_insert(st->tr_out,
+			     list_create(tr));
+
+    st = tr->dest;
+
+    st->tr_in = head_insert(st->tr_in,
+			    list_create(tr));
+
+    /*** add to the automaton ***/
+    aut->transitions = head_insert(aut->transitions,
+				   list_create(tr));
+}
+
+void transition_detach(struct automaton *aut, struct transition *tr) {
+    struct state *st = tr->src;
+
+    st->tr_out = search_and_remove(st->tr_out, tr);
+
+    st = tr->dest;
+
+    st->tr_in = search_and_remove(st->tr_in, tr);
+
+    /*** remove from the automaton ***/
+    aut->transitions = search_and_remove(aut->transitions, tr);
 }
 
 struct automaton *automaton_create(char *id) {
@@ -427,5 +508,20 @@ void network_to_dot(FILE *fc, struct network *net) {
     }
 
     fprintf(fc, "}\n");
+}
+
+
+char *state_id_create(int index) {
+    char *id = calloc(sizeof (char), 6);    // should use log(index) instead
+    sprintf(id, "%d", index);
+
+    return id;
+}
+
+char *transition_id_create(int index) {
+    char *id = calloc(sizeof (char), 7);    // should use log(index) instead
+    sprintf(id, "t%d", index);
+
+    return id;
 }
 
