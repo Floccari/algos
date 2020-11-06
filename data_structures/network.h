@@ -15,7 +15,7 @@ struct state {
     enum dfs_colors color;
     bool final;
     // 3 bytes
-    struct context *context;    // assigned by obs_space (defined in func.h)
+    struct context *context;    // assigned by bspace_compute and comp_compute (../features/bspace.h)
     struct list *tr_in;
     struct list *tr_out;
 };
@@ -56,7 +56,7 @@ struct automaton {
 
 struct link {
     char *id;
-    int index;    // used by comp_space (defined in func.h)
+    int index;    // used by bspace_compute and comp_compute (../features/bspace.h)
     // 4 bytes
     struct automaton *src;
     struct automaton *dest;
@@ -67,8 +67,8 @@ struct context {
     int lk_amount;
     struct state **states;    // current state of every automaton
     char **buffers;    // link buffers
-    struct list *current_obs;
-    int obs_index;
+    struct list *current_obs;    // list item containing current obs label
+    int obs_index;    // amount of labels processed so far
     // 4 bytes
 };
 

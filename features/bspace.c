@@ -2,11 +2,12 @@
 
 int st_amount;
 int tr_amount;
+bool comp_set;
 struct network *bs_net;
 struct map_item **ct_hashmap;
 
 struct network *compute(struct network *net, bool comp);
-void step(struct state *current_bs_state, bool comp);
+void step(struct state *current_bs_state);
 void prune(struct network *net);
 void dfs_visit(struct state *st);
 
@@ -68,12 +69,6 @@ struct network *compute(struct network *net, bool comp) {
     }
     
     memset(c->buffers, 0, sizeof (char *) * net->lk_amount);
-
-    if (comp && !net->observation) {
-	/*** there is no observation, abort ***/
-        fprintf(stderr, "No observation given\n");
-	exit(-1);    // exits here
-    }
     
     c->current_obs = get_last(net->observation);    // since it's stored in REVERSE ORDER
 
@@ -81,9 +76,12 @@ struct network *compute(struct network *net, bool comp) {
     struct state *st = state_create(state_id_create());
     st->context = c;
 
-    if (!comp)
-	st->final = true;    // since all links are empty
+    /*** check if final ***/
+    st->final = true;    // since all links are empty
 
+    if (comp && c->current_obs)
+	st->final = false;    // we still have labels left
+    
     bs_aut->states = head_insert(bs_aut->states,
 				   list_create(st));
     bs_aut->initial = st;
@@ -93,7 +91,8 @@ struct network *compute(struct network *net, bool comp) {
 						   CONTEXT, c, st));
 
     /*** recursive step ***/
-    step(st, comp);
+    comp_set = comp;
+    step(st);
 
     /*** pruning ***/
     prune(bs_net);
@@ -105,7 +104,7 @@ struct network *compute(struct network *net, bool comp) {
 }
 
 
-void step(struct state *current_bs_state, bool comp) {
+void step(struct state *current_bs_state) {
     struct context *c = current_bs_state->context;
 
     /*** foreach current state ***/
@@ -113,7 +112,7 @@ void step(struct state *current_bs_state, bool comp) {
 	struct state *st = c->states[i];
 	struct list *l = st->tr_out;
 
-	/*** foreach outgoing traisitions ***/	
+	/*** foreach outgoing transition ***/	
 	while (l) {
 	    struct transition *tr = (struct transition *) l->value;
 	    struct action *a = tr->act_in;
@@ -146,7 +145,7 @@ void step(struct state *current_bs_state, bool comp) {
 		    ls = ls->next;
 		}
 
-		if (comp) {
+		if (comp_set) {
 		    /*** skip transition if not applicable ***/
 		    struct label *lab = NULL;
 		    
@@ -213,7 +212,7 @@ void step(struct state *current_bs_state, bool comp) {
 			break;
 		    }
 
-		if (comp && new_context->current_obs)
+		if (comp_set && new_context->current_obs)
 		    new_state->final = false;    // we still have labels left
 
 		/*** add new state to the automaton ***/
@@ -231,7 +230,7 @@ void step(struct state *current_bs_state, bool comp) {
 							       CONTEXT, new_context, new_state));
 
 		/*** explore the new state completely ***/
-		step(new_state, comp);
+		step(new_state);
 	    }
 
 	NEXT_TRANSITION:

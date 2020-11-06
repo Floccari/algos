@@ -248,7 +248,15 @@ tr : ID {item = hashmap_search(hashmap, lexval, TRANSITION);
      obs-decl rel-decl in-decl out-decl ';'
    ;
 
-obs-decl : OBS '"' ID {lab = label_create(lexval, OBSERVABILITY);
+obs-decl : OBS '"' ID {item = hashmap_search(hashmap, lexval, LABEL);
+
+	               if (item) {
+			   lab = (struct label *) item->value;
+
+			   if (lab->type != OBSERVABILITY)
+			       laberror();    // exits here
+		       } else
+			   lab = label_create(lexval, OBSERVABILITY);
 
 		       hashmap_insert(hashmap,
 				      map_item_create(lab->id, LABEL, lab));
@@ -259,7 +267,15 @@ obs-decl : OBS '"' ID {lab = label_create(lexval, OBSERVABILITY);
 	 | {/* eps */}
 	 ;
 
-rel-decl : REL '"' ID {lab = label_create(lexval, RELEVANCE);
+rel-decl : REL '"' ID {item = hashmap_search(hashmap, lexval, LABEL);
+
+	               if (item) {
+			   lab = (struct label *) item->value;
+
+			   if (lab->type != RELEVANCE)
+			       laberror();    // exits here
+		       } else
+			   lab = label_create(lexval, RELEVANCE);
 
 	               hashmap_insert(hashmap,
 				      map_item_create(lab->id, LABEL, lab));
@@ -393,6 +409,6 @@ void lkouterror() {
 }
 
 void laberror() {
-    fprintf(stderr, "line %d: \"%s\" label is not an observable one\n", line, yytext);
+    fprintf(stderr, "line %d: label \"%s\" has wrong type\n", line, yytext);
     exit(-1);
 }
