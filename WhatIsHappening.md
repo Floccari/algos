@@ -1,0 +1,21 @@
+# algos
+automaton networks and stuff
+
+***VERSIONE 1***
+* Costruzione delle strutture dati etc
+* Costruzione linguaggio di input/output
+* Costruzione dei primi comandi test e comp
+* Costruzione della funzione Step per il calcolo dello spazio comportamentale, (pseudocodice)
+* Aggiornamento strutture dati soprattutto aggiunta in state dell'enum color,costruzione della funzione di Pruning 
+  usando DFS per trovare gli stati prunabili e una serie di rimozioni non semplici per prunare effettivamente
+  (Approccio che favorisce la ricerca a scapito della quantità di strutture dati
+  e della complessità nella rimozione) (pseudocodice)
+* Un primo refactoring per comprendere meglio tutto il processo di rimozione
+* Secondo refacorting per ordinare il codice per favorire una maggiore leggibilità per implementazioni future più una
+  ridenominazione del comando comp in bstate
+
+***VERSIONE 2***
+* Implementazione della seconda funzionalità richiesta (calcolo spazio raggiungibile dati una serie di eventi) ((pseudocodice)
+* Aggiornamento del linguaggio permettendo l'aggiunta di una serie di eventi osservabili
+* Piccolo aggiornamento delle strutture dati, fondamentale nella struttura context
+* Refactoring per la funzione Step e Compute per aggiungere la funzionalità 
