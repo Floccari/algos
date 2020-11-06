@@ -1,7 +1,7 @@
 # algos
 automaton networks and stuff
 
-***VERSIONE 1***
+[***VERSIONE 1***](https://github.com/Floccari/algos/tree/aaebab611efb431a7b0aa292b843196179cd28eb) 
 * Costruzione delle strutture dati etc
 * Costruzione linguaggio di input/output
 * Costruzione dei primi comandi test e comp
@@ -14,7 +14,7 @@ automaton networks and stuff
 * Secondo refacorting per ordinare il codice per favorire una maggiore leggibilità per implementazioni future più una
   ridenominazione del comando comp in bstate
 
-***VERSIONE 2***
+[***VERSIONE 2***](https://github.com/Floccari/algos/tree/cd6460aef928257adb20a75356701b9fd7364b2b)
 * Implementazione della seconda funzionalità richiesta (calcolo spazio raggiungibile dati una serie di eventi) (pseudocodice)
 * Aggiornamento del linguaggio permettendo l'aggiunta di una serie di eventi osservabili
 * Piccolo aggiornamento delle strutture dati, fondamentale nella struttura context
