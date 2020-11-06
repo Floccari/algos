@@ -15,7 +15,7 @@ automaton networks and stuff
   ridenominazione del comando comp in bstate
 
 ***VERSIONE 2***
-* Implementazione della seconda funzionalità richiesta (calcolo spazio raggiungibile dati una serie di eventi) ((pseudocodice)
+* Implementazione della seconda funzionalità richiesta (calcolo spazio raggiungibile dati una serie di eventi) (pseudocodice)
 * Aggiornamento del linguaggio permettendo l'aggiunta di una serie di eventi osservabili
 * Piccolo aggiornamento delle strutture dati, fondamentale nella struttura context
 * Refactoring per la funzione Step e Compute per aggiungere la funzionalità 
