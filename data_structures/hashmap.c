@@ -24,6 +24,20 @@ struct map_item **hashmap_create() {
     return hashmap;
 }
 
+void hashmap_empty(struct map_item **hashmap) {
+    for (int i = 0; i < HASH_TABLE_SIZE; i++)
+	if (hashmap[i]) {
+	    struct map_item *item = hashmap[i];
+	    hashmap[i] = NULL;
+	    
+	    while (item) {
+		struct map_item *next = item->next;
+		free(item);
+		item = next;
+	    }
+	}
+}
+
 int hash(char *id, int m) {
     int h = 0;
     char *p = id;

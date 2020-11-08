@@ -157,7 +157,7 @@ void context_destroy(struct context *c) {
 }
 
 char *context_digest(struct context *c) {
-    char *digest = calloc(sizeof (char), c->aut_amount + c->lk_amount + 1);
+    char *digest = calloc(c->aut_amount + c->lk_amount + 1, sizeof (char));
     digest[c->aut_amount + c->lk_amount] = '\0';
 
     for (int i = 0; i < c->aut_amount; i++)
@@ -512,15 +512,23 @@ void network_to_dot(FILE *fc, struct network *net) {
 
 
 char *state_id_create(int index) {
-    char *id = calloc(sizeof (char), 6);    // should use log(index) instead
+    char *id = calloc(6, sizeof (char));    // should use log(index) instead
     sprintf(id, "%d", index);
 
     return id;
 }
 
 char *transition_id_create(int index) {
-    char *id = calloc(sizeof (char), 7);    // should use log(index) instead
+    char *id = calloc(7, sizeof (char));    // should use log(index) instead
     sprintf(id, "t%d", index);
+
+    return id;
+}
+
+// internal, unique, not serializable
+char *univ_tr_id_create(int index) {
+    char *id = calloc(8, sizeof (char));    // should use log(index) instead
+    sprintf(id, "_t%d", index);
 
     return id;
 }

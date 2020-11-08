@@ -128,4 +128,6 @@ char *state_id_create(int index);
 
 char *transition_id_create(int index);
 
+char *univ_tr_id_create(int index);
+
 #endif

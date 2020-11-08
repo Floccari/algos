@@ -3,6 +3,7 @@
 #include "data_structures/network.h"
 
 #include "features/bspace.h"
+#include "features/diag.h"
 
 extern struct network *net;
 extern struct map_item **hashmap;
@@ -28,7 +29,8 @@ int main(int argc, char **argv) {
 	printf("\ttest\tTest network loading and serialization\n");
 	printf("\tdot\tOutput dot representation of the network\n");
 	printf("\tbspace\tCompute the behavioral space of the network\n");
-	printf("\tcomp\tCompute a behavioral subspace of the network given an observation\n");	
+	printf("\tcomp\tCompute a behavioral subspace of the network given an observation\n");
+	printf("\tdiag\tOutput a diagnosis given a behavioral subspace\n");
 	
 	exit(0);
     }
@@ -66,6 +68,13 @@ int main(int argc, char **argv) {
 	struct network *c_net = comp_compute(net);
 	network_print_subs(stdout, net, c_net, true);
 	network_serialize(stdout, c_net);
+
+	exit(0);
+    } else if (strcmp(argv[1], "diag") == 0) {
+	yyparse();
+
+	char *diagnosis = get_diagnosis(net);
+	fprintf(stdout, "%s\n", diagnosis);
 
 	exit(0);
     } else 
