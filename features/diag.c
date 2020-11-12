@@ -2,7 +2,8 @@
 
 int tr_amount;
 
-char *transition_id_create();
+void diag_error();
+
 void phase_one(struct network *net);
 void phase_two(struct network *net);
 void phase_three(struct network *net);
@@ -58,6 +59,10 @@ char *get_diagnosis(struct network *net) {
 	phase_two(net);    // lines 18-19 of the pseudocode
 	
 	phase_three(net);    // lines 21-31 of the pseudocode
+
+	/*** prevent segfaults if the input network is wrong ***/
+	if (!aut->transitions)
+	    diag_error();    // exits here
     }
 
     /*** there should be only one transition now ***/
@@ -94,7 +99,7 @@ void phase_one(struct network *net) {
 	    tr->src = tr_in->src;
 	    tr->dest = tr_out->dest;
 
-	    /*** build the appropriata label ***/
+	    /*** build the appropriate label ***/
 	    int l_in = (tr_in->rel) ? strlen(tr_in->rel->id) : 0;
 	    int l_out = (tr_out->rel) ? strlen(tr_out->rel->id) : 0;
 
@@ -128,28 +133,33 @@ void phase_one(struct network *net) {
 
 void phase_two(struct network *net) {
     struct automaton *aut = (struct automaton *) net->automatons->value;
-    struct list *l = aut->states;
+    struct map_item **tr_hashmap = hashmap_create();
+    struct list *ids = NULL;
 
-    struct map_item **st_hashmap = hashmap_create();
+    struct list *l = aut->transitions;
 
-    /*** foreach state ***/
+    /*** foreach transition ***/
     while (l) {
-	struct state *st = (struct state *) l->value;
+	struct transition *tr1 = (struct transition *) l->value;
 
-	struct list *lt = st->tr_out;
+	/*** create look-up id ***/
+	char *lookup = calloc(strlen(tr1->src->id) + strlen(tr1->dest->id) + 1, sizeof (char));
+	strcpy(lookup, tr1->src->id);
+	strcat(lookup, tr1->dest->id);
 
-	/*** foreach outgoing transition ***/
-	while (lt) {
-	    struct transition *tr1 = (struct transition *) lt->value;
-	    struct map_item *item = hashmap_search(st_hashmap, tr1->dest->id, STATE);
-	    
-	    if (item) {
+	struct map_item *item = hashmap_search(tr_hashmap, lookup, TRANSITION);
+
+	if (item) {
 		/*** save pointer to next transition ***/
-		lt = lt->next;
+		l = l->next;
 
-		/*** recover parallel transition and replace the label ***/
+		/*** look-up id not needed anymore ***/
+		free(lookup);
+
+		/*** recover parallel transition ***/
 		struct transition *tr2 = (struct transition *) item->value;
 
+		/*** build the appropriate label and assign it to tr2 ***/
 		int l1 = (tr1->rel) ? strlen(tr1->rel->id) : 0;
 		int l2 = (tr2->rel) ? strlen(tr2->rel->id) : 0;
 
@@ -196,26 +206,32 @@ void phase_two(struct network *net) {
 		    tr2->rel = label_create(id, RELEVANCE);
 		}
 		
-		/*** now tr2's rel label expresses both transitions ***/
+		/*** remove tr1 ***/
 		transition_detach(aut, tr1);
-	    } else {
-		item = map_item_create(tr1->dest->id, STATE, tr1);
-		
-		/*** add the unvisited state to the hashmap ***/
-		hashmap_insert(st_hashmap, item);
+	} else {
+	    hashmap_insert(tr_hashmap,
+			   map_item_create(lookup, TRANSITION, tr1));
 
-		lt = lt->next;
-	    }
+	    /*** save pointer to look-up id for later cleanup ***/
+	    head_insert(ids,
+			list_create(lookup));
+
+	    l = l->next;
 	}
-
-	/*** we're done with this state, remove all list items ***/
-	hashmap_empty(st_hashmap);
-
-	l = l->next;
     }
 
-    /*** all done, cleanup ***/
-    free(st_hashmap);
+    /*** cleanup ***/
+    hashmap_empty(tr_hashmap);
+    free(tr_hashmap);
+
+    l = ids;
+
+    while (l) {
+	struct list *next = l->next;
+	free(l->value);
+	free(l);
+	l = next;
+    }
 }
 
 void phase_three(struct network *net) {
@@ -315,6 +331,10 @@ void phase_three(struct network *net) {
 	} else
 	    l = l->next;
     }
+}
 
 
+void diag_error() {
+    fprintf(stderr, "error: this is not a behavioral space!\n");
+    exit(-1);
 }
