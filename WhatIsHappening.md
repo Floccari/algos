@@ -16,12 +16,14 @@ automaton networks and stuff
 * Aggiunto il comando dot per serializzare una rete in formato dot, così da poter generare al volo grafici in formato pdf
 
 [***VERSIONE 2***](https://github.com/Floccari/algos/tree/cd6460aef928257adb20a75356701b9fd7364b2b)
-* Implementazione della seconda funzionalità richiesta (calcolo spazio raggiungibile dati una serie di etichette) **(pseudocodice)**
+* Implementazione della seconda funzionalità richiesta (comando comp, stavolta per davvero), per il calcolo dello spazio
+  raggiungibile data una serie di etichette **(pseudocodice)**
 * Aggiornamento del linguaggio permettendo l'aggiunta di una osservazione lineare (lista di etichette)
 * Piccolo aggiornamento delle strutture dati, fondamentale nella struttura context
 * Refactoring per la funzione Step e Compute per aggiungere la funzionalità
 
-***VERSIONE 3***
+[***VERSIONE 3***](https://github.com/Floccari/algos/tree/c137d026e8c2f82b682bc14c3b2a8e2d75d1743f)
 * Refactoring per permettere di agganciare/sganciare velocemente transizioni e stati
-* Aggiunta del comando diag, la relativa funzione é strutturata seguendo lo pseudocodice della prof e divisa in 3 fasi per
-  maggiore leggibilità **(pseudocodice)**
+* Aggiunta della terza funzionalità (comando diag), la relativa funzione é strutturata seguendo lo pseudocodice della prof
+  e divisa in 3 fasi per maggiore leggibilità **(pseudocodice)**
+* Piccola revisione della fase due di Get_Diagnosis
