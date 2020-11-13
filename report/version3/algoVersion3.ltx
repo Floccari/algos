@@ -1,0 +1,215 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage{geometry}
+\geometry{a4paper, total={170mm,257mm}, left=20mm, top=20mm}
+\usepackage[utf8]{inputenc}
+\usepackage[italian]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{hyperref}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\begin{document}
+\begin{algorithm}
+\renewcommand{\thealgorithm}{}
+\floatname{algorithm}{}
+\caption{diagnosis(netBs)}
+\begin{algorithmic}[1]
+\STATE $automaton \leftarrow sutomatons[netBs]$
+\STATE \COMMENT {considerando netBs come una rete comportamentale}
+\STATE \COMMENT {automaton è l'unico elemento della lista}
+\STATE \COMMENT {Definiamo gli stati "One To One" come quelli con una sola transizione entrante ed uscente e consideriamo tutti gli altri come "Many To Many", due transizioni vengono definite parallele se hanno in comune lo stato di partenza e di arrivo}
+\STATE \COMMENT {riporta l'unica transizione rimasta nell'automa}
+\STATE $replaceInitialState(netBs)$
+\STATE $replaceEndStates(netBS)$
+\STATE $tran \leftarrow transitions[automaton]$
+\WHILE {$next[tran] \neq NIL$}
+\STATE $replaceOneToOneStates(netBs)$
+\STATE $unifyParallelTransitions(netBs)$
+\STATE $replaceManyToManyStates(netBs)$
+\IF    {$tran = NIL$}
+\STATE $error()$
+\ENDIF 
+\ENDWHILE
+\RETURN $tran$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+\renewcommand{\thealgorithm}{}
+\floatname{algorithm}{}
+\caption{connectTwoStates(network,source,destination,relevanceLabel)}
+\begin{algorithmic}[1]
+\STATE $transition \leftarrow initialiseTranstition()$
+\STATE $src[transition] \leftarrow source$
+\STATE $dest[tranEnd] \leftarrow destination$
+\STATE $rel[transition] \leftarrow relevanceLabel$
+\STATE $addTransition(transition,network)$
+\end{algorithmic}
+\end{algorithm}
+
+
+\begin{algorithm}
+\renewcommand{\thealgorithm}{}
+\floatname{algorithm}{}
+\caption{replaceInitialState(network)}
+\begin{algorithmic}[1]
+\STATE $automaton \leftarrow automatons[network]$
+\STATE $initState \leftarrow initialiseState()$
+\STATE $addState(init,network)$
+\STATE $stateToStart \leftarrow initial[automaton]$
+\STATE $connectTwoStates(network,stateToStart,initState,NIL)$
+\STATE $initial[automaton] \leftarrow initState$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+\renewcommand{\thealgorithm}{}
+\floatname{algorithm}{}
+\caption{replaceEndStates(network)}
+\begin{algorithmic}[1]
+\STATE $automaton \leftarrow automatons[network]$
+\STATE $endState \leftarrow initialiseState()$
+\STATE $totalState \leftarrow states[automaton]$
+\WHILE {$totalState \neq NIL$}
+\IF    {$final[totalState] = TRUE$}
+\STATE $connectTwoStates(network,totalState,endState,NIL)$
+\STATE $final[totalState] \leftarrow FALSE$
+\ENDIF 
+\STATE $totalState \leftarrow next[totalState]$
+\ENDWHILE
+\STATE $final[endState] \leftarrow TRUE$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+\renewcommand{\thealgorithm}{}
+\floatname{algorithm}{}
+\caption{replaceOneToOneStates(network)}
+\begin{algorithmic}[1]
+\STATE \COMMENT {questa funzione fa riferimento alle righe 16-17 dello pseudocodice nella consegna}
+\STATE $automaton \leftarrow automatons[network]$
+\STATE $totalState \leftarrow states[network]$
+\WHILE {$totalState \neq NIL$}
+\STATE $transitionIn \leftarrow trIn[totalState]$
+\STATE $transitionOut \leftarrow trOut[totalState]$
+\IF {$transitionIn \neq NIL $ \AND $next[transitionIn] = NIL$ \AND $transitionOut \neq NIL$ \AND
+$next[transitionOut] = NIL$}
+\STATE $labelIn \leftarrow rel[transitionIn]$
+\STATE $labelOut \leftarrow rel[transitionOut]$
+\STATE $newId \leftarrow oneToOneRelation(id[LabelIn],id[LabelOut])$
+\STATE $newLabel \leftarrow initialiseLabel()$
+\STATE $id[newLabel] \leftarrow newId$
+\STATE $labelType[newLabel] \leftarrow RELEVANCE$
+\STATE $connectTwoStates(network,transitionIn,transitionOut,newLabel)$
+\STATE $removeTheState(network,totalState)$
+\ENDIF
+\STATE $totalState \leftarrow next[totalState]$
+\ENDWHILE
+\end{algorithmic}
+\end{algorithm}
+
+
+
+\begin{algorithm}
+\renewcommand{\thealgorithm}{}
+\floatname{algorithm}{}
+\caption{unifyParallelTransitions(network)}
+\begin{algorithmic}[1]
+\STATE \COMMENT {questa funzione riassume le righe 18-19 dello pseudocodice nella consegna .
+lookup contiene la chiave usata per mappare la transizione all'interno dell'hashmap, una stringa contenente l'identificativo dello stato sorgente e lo stato di destinazione}
+\STATE $automaton \leftarrow automatons[network]$
+\STATE $transitionHashMap \leftarrow createHashmap()$
+\STATE $ids \leftarrow createList()$
+\STATE $tran \leftarrow transitions[automaton]$
+\WHILE {$tran \neq NIL$}
+\STATE $lookup \leftarrow createLookUpForHashmap(tran)$
+\STATE $item \leftarrow hashmapSearch (transitionHashmap,lookup)$
+\IF{$item = NIL$}
+\STATE $itemForMap \leftarrow createItem(lookup,tran)$
+\STATE $hashMapInsert(transitionHashmap,itemForMap)$
+\ELSE 
+\STATE $parallelTransition \leftarrow value[item]$
+\STATE $label1 \leftarrow rel[parallelTransition]$
+\STATE $label2 \leftarrow rel[tran]$
+\STATE $newId \leftarrow parallelRelation(id[label1],id[label2])$
+\STATE $id[label1] \leftarrow newId$
+\STATE $rel[parallelTransition] \leftarrow label1$
+\STATE $removeTransition(network,tran)$
+\ENDIF
+\STATE $tran \leftarrow next[tran]$
+\ENDWHILE
+\end{algorithmic}
+\end{algorithm}
+
+
+\begin{algorithm}
+\renewcommand{\thealgorithm}{}
+\floatname{algorithm}{}
+\caption{replaceManyToManyStates(network)}
+\begin{algorithmic}[1]
+\STATE \COMMENT {questa funzione riassume le righe 21-31 dello pseudocodice nella consegna}
+\STATE $automaton \leftarrow automatons[network]$
+\STATE $totalState \leftarrow states[automaton]$
+\WHILE{$totalState \neq NIL$}
+\IF{$initial[aut] \ne totalState $ \AND $final[automaton] \neq totalState$}
+\STATE $autoTransitionRel \leftarrow removeAutoTansition(totalState)$
+\STATE $unifyAllTransitionsInState(totalState,autoTransitionRel)$
+\ENDIF
+\STATE $totalState \leftarrow next[totalState]$
+\ENDWHILE
+\end{algorithmic}
+\end{algorithm}
+
+
+
+\begin{algorithm}
+\renewcommand{\thealgorithm}{}
+\floatname{algorithm}{}
+\caption{unifyAllTransitionsInState(state)}
+\begin{algorithmic}[1]
+\STATE $transitionIn \leftarrow trIn[state]$
+\STATE $transitionOut \leftarrow trOut[state]$
+\WHILE {$transitionIn \neq NIL$}
+\WHILE {$transitionOut \neq NIL$}
+\STATE $labelIn \leftarrow rel[transitionIn]$
+\STATE $labelOut \leftarrow rel[transitionOut]$
+\STATE $newId \leftarrow manyToManyRel(id[labelIn],id[labelOut],autoTransitionRel)$
+\STATE $newLabel \leftarrow labelInitialise()$
+\STATE $id[newLabel] \leftarrow newId$
+\STATE $connectTwoStates(network,src[transitionIn],dest[transitionOut],newLabel)$ 
+\STATE $removeTheState(networl,totalState)$
+\STATE $transitionOut \leftarrow next[transitionOut]$
+\ENDWHILE
+\STATE $transitionIn \leftarrow next[transitionIn]$ 
+\ENDWHILE
+\STATE $removeState(network,state)$
+\end{algorithmic}
+\end{algorithm}
+
+
+\begin{algorithm}
+\renewcommand{\thealgorithm}{}
+\floatname{algorithm}{}
+\caption{removeAutoTransition(state)}
+\begin{algorithmic}[1]
+\STATE $transitionIn \leftarrow trIn[totalState]$
+\STATE $autoTransitionRel \leftarrow NIL$
+\WHILE {$transitionIn \neq NIL$}
+\IF{$src[transitionIn] = dest[transitionIn]$ \AND $rel[transitionIn] = NIL$}
+\STATE $labelRel \leftarrow rel[transitionIn]$
+\STATE $autoTransitionRel \leftarrow id[labelRel]$
+\STATE $removeTransition(network,transitionIn)$
+\RETURN $autoTransitionRel$
+\ENDIF
+\STATE $transitionIn \leftarrow next[transitionIn]$
+\ENDWHILE
+\end{algorithmic}
+\end{algorithm}
+
+\end{document}

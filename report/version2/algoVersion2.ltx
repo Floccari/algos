@@ -18,7 +18,7 @@
 \begin{algorithm}
 \renewcommand{\thealgorithm}{}
 \floatname{algorithm}{}
-\caption{compObs(currentBsState)}
+\caption{stepComp(currentBsState)}
 \begin{algorithmic}[1]
 \STATE $currentContext \leftarrow context[currentBsState]$
 \FOR{\textbf{each} state in states[currentContext]}
@@ -33,7 +33,7 @@
 \STATE $dest[newTransition] \leftarrow destinationBsState$
 \ELSE 
 \STATE $createNewState(newContext,tran)$
-\STATE $step(destinationBsState)$
+\STATE $stepComp(destinationBsState)$
 \ENDIF
 \ENDIF
 \ENDWHILE
@@ -41,46 +41,6 @@
 \end{algorithmic}
 \end{algorithm}
 
-\begin{algorithm}
-\renewcommand{\thealgorithm}{}
-\floatname{algorithm}{}
-\caption{takeEventFromBuffer(context,action)}
-\begin{algorithmic}[1]
-\STATE $l \leftarrow link[action]$
-\STATE $pos \leftarrow index[l]$
-\RETURN $buffer[context][pos]$
-\end{algorithmic}
-\end{algorithm}
-
-\begin{algorithm}
-\renewcommand{\thealgorithm}{}
-\renewcommand{\thealgorithm}{}
-\floatname{algorithm}{}
-\caption{isEventPresent(context,transition)}
-\begin{algorithmic}[1]
-\STATE $actionRequest \leftarrow actIn[transition]$
-\STATE $eventBuffer \leftarrow takeEventFromBuffer(context,actionRequest)$
-\STATE $eventRequest \leftarrow event[actionRequest]$
-\RETURN $(actionRequest = NIL$ \OR $eventBuffer = eventRequest)$
-\end{algorithmic}
-\end{algorithm}
-
-\begin{algorithm}
-\renewcommand{\thealgorithm}{}
-\floatname{algorithm}{}
-\caption{isBufferFree(context,transition)}
-\begin{algorithmic}[1]
-\STATE $actionProduced \leftarrow actOut(transition)$
-\WHILE {$actionProduced \neq NIL$}
-\STATE $eventBuffer \leftarrow takeEventFromBuffer(context,actionProduced)$
-\IF{$eventBuffer \neq NIL$}
-\RETURN $FALSE$
-\ENDIF
-\STATE $actionProduced \leftarrow next[actionProduced]$
-\ENDWHILE
-\RETURN $TRUE$
-\end{algorithmic}
-\end{algorithm}
 
 \begin{algorithm}
 \renewcommand{\thealgorithm}{}
@@ -113,20 +73,6 @@
 \begin{algorithm}
 \renewcommand{\thealgorithm}{}
 \floatname{algorithm}{}
-\caption{createNewTransition(context,transition)}
-\begin{algorithmic}[1]
-\STATE $newTransition \leftarrow initializeTransition()$
-\STATE $obs[newTransition] \leftarrow obs[transition]$
-\STATE $rel[newTransition] \leftarrow rel[transition]$
-\STATE $src[newTransition] \leftarrow createSource(context)$
-\STATE $netBs \leftarrow addTransition(newTransition)$
-\RETURN newTransition
-\end{algorithmic}
-\end{algorithm}
-
-\begin{algorithm}
-\renewcommand{\thealgorithm}{}
-\floatname{algorithm}{}
 \caption{createNewState(context,transition)}
 \begin{algorithmic}[1]
 \STATE $destinationBsState \leftarrow initializeState()$
@@ -151,50 +97,6 @@
 \begin{algorithm}
 \renewcommand{\thealgorithm}{}
 \floatname{algorithm}{}
-\caption{dfsVisit(state)}
-\begin{algorithmic}[1]
-\STATE $color[source] \leftarrow GRAY$
-\STATE $transitionsIncoming \leftarrow trIn[state]$
-\WHILE {$transitionsIncoming \neq NIL$}
-\STATE $stateSource \leftarrow scr[transitionsIncoming]$
-\IF {$color[stateSource] = WHITE$}
-\STATE dfsVisit[stateSource]
-\ENDIF
-\STATE $transitionsIncoming \leftarrow nect[transitionsIncoming]$
-\ENDWHILE
-\STATE $color[state] \leftarrow BLACK$
-\end{algorithmic}
-\end{algorithm}
-
-\begin{algorithm}
-\renewcommand{\thealgorithm}{}
-\floatname{algorithm}{}
-\caption{prune(network)}
-\begin{algorithmic}[1]
-\STATE\COMMENT {consideriamo solo reti con un solo automa, infatti il pruning avviene solo sulle 
-\STATE network generate dal sistema}
-\STATE $autom \leftarrow automatons[network]$
-\STATE $totalStat \leftarrow states[autom]$ 
-\STATE\COMMENT {La lista autom avrà un solo elemento}
-\WHILE{$totalStat \neq NIL$}
-\IF{$final[totalState]$}
-\STATE $dfsVisit(totalState)$
-\ENDIF
-\STATE $totalState \leftarrow next[totalState]$
-\ENDWHILE
-
-\WHILE{$totalStat \neq NIL$}
-\IF {$color[totalState] = WHITE$}
-\STATE $removeTheState(network,totalState)$
-\ENDIF
-\STATE $totalState \leftarrow next[totalState]$
-\ENDWHILE 
-\end{algorithmic}
-\end{algorithm}
-
-\begin{algorithm}
-\renewcommand{\thealgorithm}{}
-\floatname{algorithm}{}
 \caption{isTransitionObservable(context,transition)}
 \begin{algorithmic}[1]
 \STATE $label \leftarrow NIL$
@@ -205,11 +107,7 @@
 \STATE $transitionLabel \leftarrow obs[tansition]$
 \STATE $idObsarvation \leftarrow id[transitionLabel]$
 \ENDIF 
-\IF{$transitionLabel \neq NIL$ \AND $(label \neq NIL$ \OR $idLabel \neq idObsarvation)$}
-\RETURN FALSE
-\ELSE
-\RETURN TRUE
-\ENDIF
+\RETURN {$transitionLabel \neq NIL$ \AND $(label \neq NIL$ \OR $idLabel \neq idObsarvation)$}
 \end{algorithmic}
 \end{algorithm}
 
