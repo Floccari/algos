@@ -37,6 +37,7 @@ struct label {
 
 struct transition {
     char *id;
+    char *sub;
     struct action *act_in;
     struct list *act_out;
     struct label *obs;

@@ -19,7 +19,7 @@ features/bspace.o : features/bspace.h features/bspace.c data_structures/list.h d
 
 features/diag.o : features/diag.h features/diag.c data_structures/list.h data_structures/hashmap.h data_structures/network.h
 
-main.o : main.c features/bspace.h data_structures/list.h data_structures/hashmap.h data_structures/network.h
+main.o : main.c features/bspace.h features/diag.h data_structures/list.h data_structures/hashmap.h data_structures/network.h
 
 input/lexer.c : input/lexer.lex input/parser.h data_structures/list.h data_structures/hashmap.h data_structures/network.h
 	flex -o $@ input/lexer.lex

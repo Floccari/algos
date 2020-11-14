@@ -73,7 +73,8 @@ int main(int argc, char **argv) {
     } else if (strcmp(argv[1], "diag") == 0) {
 	yyparse();
 
-	char *diagnosis = get_diagnosis(net);
+	struct automaton *aut = (struct automaton *) net->automatons->value;
+	char *diagnosis = get_diagnosis(aut);
 	fprintf(stdout, "%s\n", diagnosis);
 
 	exit(0);

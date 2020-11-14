@@ -5,8 +5,10 @@
 #include "../data_structures/hashmap.h"
 #include "../data_structures/network.h"
 
-// assumes there's only one automaton
-// and heavily modifies it
-char *get_diagnosis(struct network *net);
+// heavily modifies aut
+char *get_diagnosis(struct automaton *aut);
+
+// heavily modifies aut
+struct list *get_split_diag(struct automaton *aut);
 
 #endif

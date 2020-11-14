@@ -1,20 +1,47 @@
 #include "diag.h"
 
 int tr_amount;
+bool split_set;
+struct state *init;
+struct state *fin;
 
 void diag_error();
 
-void phase_one(struct network *net);
-void phase_two(struct network *net);
-void phase_three(struct network *net);
+void do_regexp(struct automaton *aut);
+bool multiple_tr(struct automaton *aut);
+void phase_one(struct automaton *aut);
+void phase_two(struct automaton *aut);
+void phase_three(struct automaton *aut);
 
-char *get_diagnosis(struct network *net) {
-    struct automaton *aut = (struct automaton *) net->automatons->value;
 
+char *get_diagnosis(struct automaton *aut) {
+    split_set = false;
+    do_regexp(aut);
+
+    if (aut->transitions) {
+	struct transition *tr = (struct transition *) aut->transitions->value;
+
+	if (tr->rel)
+	    return tr->rel->id;
+	else
+	    return NULL;
+    } else
+	return NULL;
+}
+
+struct list *get_split_diag(struct automaton *aut) {
+    split_set = true;
+    do_regexp(aut);
+
+    return aut->transitions;
+}
+
+
+void do_regexp(struct automaton *aut) {
     tr_amount = 0;
 
-    /*** replace initial state ***/
-    struct state *init = state_create("_init");
+    /*** add new initial state ***/
+    init = state_create("_init");
 	
     aut->states = head_insert(aut->states,
 			      list_create(init));
@@ -27,10 +54,9 @@ char *get_diagnosis(struct network *net) {
 
     aut->initial = init;
 
-    /*** replace final states ***/
+    /*** add new final state ***/
     struct list *l = aut->states;
-    struct state *fin = state_create("_fin");
-    fin->final = true;
+    fin = state_create("_fin");
 
     aut->states = head_insert(aut->states,
 			      list_create(fin));
@@ -44,39 +70,73 @@ char *get_diagnosis(struct network *net) {
 	    tr->src = st;
 	    tr->dest = fin;
 	    transition_attach(aut, tr);
-
-	    st->final = false;
 	}
 
 	l = l->next;
     }
 
-    /*** compute the regexp ***/
-    while (aut->transitions->next) {
 
-	phase_one(net);    // lines 16-17 of the pseudocode
+    /*** if !split_set, while more than one transition ***/
+    /*** else, while more than 2 states, or more than one transition with the same sub ***/
+    while ((!split_set && aut->transitions->next) ||
+	   (split_set && (aut->states->next->next || multiple_tr(aut)))) {
 	
-	phase_two(net);    // lines 18-19 of the pseudocode
+	phase_one(aut);    // 16-17, split: 12-19
 	
-	phase_three(net);    // lines 21-31 of the pseudocode
+	phase_two(aut);    // 18-19, split: 20-23
+	
+	phase_three(aut);    // 21-31, split: 25-48
 
 	/*** prevent segfaults if the input network is wrong ***/
 	if (!aut->transitions)
 	    diag_error();    // exits here
     }
-
-    /*** there should be only one transition now ***/
-    tr = (struct transition *) aut->transitions->value;
-
-    if (tr->rel)
-	return tr->rel->id;
-    else
-	return NULL;
 }
 
 
-void phase_one(struct network *net) {
-    struct automaton *aut = (struct automaton *) net->automatons->value;
+bool multiple_tr(struct automaton *aut) {
+    struct map_item **sub_hashmap = hashmap_create();
+    bool empty_tr = false;
+
+    struct list *l = aut->transitions;
+
+    while (l) {
+	struct transition *tr = (struct transition *) l->value;
+
+	if (!tr->sub) {
+	    /*** check for multiple transitions with no sub ***/
+	    if (empty_tr) {
+		/*** cleanup ***/
+		hashmap_empty(sub_hashmap);
+		free(sub_hashmap);
+		
+		return true;
+	    } else
+		empty_tr = true;
+	} else {
+	    /*** check for multiple transitions with the same sub ***/
+	    struct map_item *item = hashmap_search(sub_hashmap, tr->sub, TRANSITION);
+
+	    if (item) {
+		/*** cleanup ***/
+		hashmap_empty(sub_hashmap);
+		free(sub_hashmap);
+
+		return true;
+	    } else {
+		/*** add transition to the hashmap ***/
+		hashmap_insert(sub_hashmap,
+			       map_item_create(tr->sub, TRANSITION, tr));
+	    }
+	}
+
+	l = l->next;
+    }
+
+    return false;
+}
+
+void phase_one(struct automaton *aut) {
     struct list *l = aut->states;
 
     /*** foreach state ***/
@@ -121,6 +181,14 @@ void phase_one(struct network *net) {
 		tr->rel = label_create(id, RELEVANCE);
 	    }
 
+	    /*** set sub ***/
+	    if (split_set) {
+		if (st->final)
+		    tr->sub = st->id;
+		else
+		    tr->sub = tr_out->sub;
+	    }
+
 	    /*** replace state with new transition ***/
 	    state_detach(aut, st);
 	    state_destroy(st);
@@ -131,8 +199,7 @@ void phase_one(struct network *net) {
     }
 }
 
-void phase_two(struct network *net) {
-    struct automaton *aut = (struct automaton *) net->automatons->value;
+void phase_two(struct automaton *aut) {
     struct map_item **tr_hashmap = hashmap_create();
     struct list *ids = NULL;
 
@@ -143,9 +210,19 @@ void phase_two(struct network *net) {
 	struct transition *tr1 = (struct transition *) l->value;
 
 	/*** create look-up id ***/
-	char *lookup = calloc(strlen(tr1->src->id) + strlen(tr1->dest->id) + 1, sizeof (char));
+	char *lookup;
+	
+	if (tr1->sub)
+	    lookup = calloc(strlen(tr1->src->id) + strlen(tr1->dest->id) + strlen(tr1->sub) + 1,
+				  sizeof (char));
+	else
+	    lookup = calloc(strlen(tr1->src->id) + strlen(tr1->dest->id) + 1, sizeof (char));
+	
 	strcpy(lookup, tr1->src->id);
 	strcat(lookup, tr1->dest->id);
+
+	if (tr1->sub)
+	    strcat(lookup, tr1->sub);
 
 	struct map_item *item = hashmap_search(tr_hashmap, lookup, TRANSITION);
 
@@ -234,16 +311,15 @@ void phase_two(struct network *net) {
     }
 }
 
-void phase_three(struct network *net) {
-    struct automaton *aut = (struct automaton *) net->automatons->value;
+void phase_three(struct automaton *aut) {
     struct list *l = aut->states;
 
     /*** foreach state ***/
     while (l) {
 	struct state *st = (struct state *) l->value;
 
-	/*** that is not initial or final ***/
-	if (aut->initial != st && !st->final) {	
+	/*** that is not _init or _fin ***/
+	if (st != init && st != fin) {
 	    struct list *lt_in = st->tr_in;
 	    char *autotr_rel = NULL;
 
@@ -313,6 +389,14 @@ void phase_three(struct network *net) {
 			*p++ = '\0';
 
 			tr->rel = label_create(id, RELEVANCE);
+		    }
+
+		    /*** set sub ***/
+		    if (split_set) {
+			if (st->final && tr->dest == fin && !tr_out->sub)
+			    tr->sub = st->id;
+			else
+			    tr->sub = tr_out->sub;
 		    }
 
 		    /*** attach the transition ***/
