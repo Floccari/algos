@@ -290,8 +290,8 @@ void phase_two(struct automaton *aut) {
 			   map_item_create(lookup, TRANSITION, tr1));
 
 	    /*** save pointer to look-up id for later cleanup ***/
-	    head_insert(ids,
-			list_create(lookup));
+	    ids = head_insert(ids,
+			      list_create(lookup));
 
 	    l = l->next;
 	}

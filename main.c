@@ -4,6 +4,7 @@
 
 #include "features/bspace.h"
 #include "features/diag.h"
+#include "features/dctor.h"
 
 extern struct network *net;
 extern struct map_item **hashmap;

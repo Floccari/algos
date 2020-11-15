@@ -15,7 +15,8 @@ struct state {
     enum dfs_colors color;
     bool final;
     // 3 bytes
-    struct context *context;    // assigned by bspace_compute and comp_compute (../features/bspace.h)
+    struct context *context;    // used by bspace_compute and comp_compute (../features/bspace.h)
+    struct state *silent;    // used by get_silent (../features/dctor.h)
     struct list *tr_in;
     struct list *tr_out;
 };
@@ -37,7 +38,7 @@ struct label {
 
 struct transition {
     char *id;
-    char *sub;
+    char *sub;    // used by get_split_diag (../features/diag.h)
     struct action *act_in;
     struct list *act_out;
     struct label *obs;
