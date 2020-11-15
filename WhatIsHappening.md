@@ -29,4 +29,5 @@ automaton networks and stuff
 * Piccola revisione della fase due di Get_Diagnosis
 
 ***VERSIONE 4***
-* Aggiunto il secondo algoritmo per le espressioni regolari, rifattorizzato assieme al primo **(pseudocodice)**
+* Aggiunto il secondo algoritmo per le espressioni regolari, rifattorizzato assieme al primo
+* Aggiuno l'algoritmo per calcolare le chiusure silenziose (ancora da decorare)
