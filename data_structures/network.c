@@ -9,17 +9,6 @@ struct state *state_create(char *id) {
     return st;
 }
 
-void state_destroy(struct state *st) {
-    free(st->id);
-
-    if (st->context)
-	free(st->context);
-
-    // state_detach already cleared tr_in and tr_out
-    
-    free(st);
-}
-
 void state_detach(struct automaton *aut, struct state *st) {
     struct list *ls = st->tr_in;
     
@@ -414,7 +403,7 @@ void network_print_subs(FILE *fc, struct network *net, struct network *comp_net,
 
 	fprintf(fc, "# %s: ", st->id);
 
-	struct context *c = st->context;
+	struct context *c = (struct context *) st->value;
 
 	/*** states ***/
 	for (int i = net->aut_amount - 1; i >= 0; i--)

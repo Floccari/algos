@@ -15,8 +15,7 @@ struct state {
     enum dfs_colors color;
     bool final;
     // 3 bytes
-    struct context *context;    // used by bspace_compute and comp_compute (../features/bspace.h)
-    struct state *silent;    // used by get_silent (../features/dctor.h)
+    void *value;    // used to store various pointers
     struct list *tr_in;
     struct list *tr_out;
 };
@@ -85,8 +84,6 @@ struct network {
 };
 
 struct state *state_create(char *id);
-
-void state_destroy(struct state *st);
 
 void state_detach(struct automaton *aut, struct state *st);
 

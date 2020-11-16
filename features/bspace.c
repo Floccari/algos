@@ -71,7 +71,7 @@ struct network *compute(struct network *net, bool comp) {
 
     /*** create initial state and insert it ***/
     struct state *st = state_create(state_id_create(st_amount++));
-    st->context = c;
+    st->value = c;
 
     st->final = true;    // since all links are empty
 
@@ -101,7 +101,7 @@ struct network *compute(struct network *net, bool comp) {
 
 
 void step(struct state *current_bs_state) {
-    struct context *c = current_bs_state->context;
+    struct context *c = (struct context *) current_bs_state->value;
     struct automaton *bs_aut = (struct automaton *) bs_net->automatons->value;
 
     /*** foreach current state ***/
@@ -187,7 +187,7 @@ void step(struct state *current_bs_state) {
 
 		/*** create a new state ***/
 		struct state *new_state = state_create(state_id_create(st_amount++));
-		new_state->context = new_context;
+		new_state->value = new_context;
 
 		/*** check if new state is final ***/
 		new_state->final = true;
@@ -252,7 +252,8 @@ void prune(struct network *net) {
 	    l = l->next;
 
 	    state_detach(aut, st);
-	    state_destroy(st);
+	    free(st->value);
+	    free(st);
 	} else
 	    l = l->next;
     }

@@ -1,22 +1,20 @@
 #include "diag.h"
 
 int tr_amount;
-bool split_set;
 struct state *init;
 struct state *fin;
 
 void diag_error();
 
-void do_regexp(struct automaton *aut);
+void do_regexp(struct automaton *aut, bool split);
 bool multiple_tr(struct automaton *aut);
-void phase_one(struct automaton *aut);
-void phase_two(struct automaton *aut);
-void phase_three(struct automaton *aut);
+void phase_one(struct automaton *aut, bool split);
+void phase_two(struct automaton *aut, bool split);
+void phase_three(struct automaton *aut, bool split);
 
 
 char *get_diagnosis(struct automaton *aut) {
-    split_set = false;
-    do_regexp(aut);
+    do_regexp(aut, false);
 
     if (aut->transitions) {
 	struct transition *tr = (struct transition *) aut->transitions->value;
@@ -30,14 +28,13 @@ char *get_diagnosis(struct automaton *aut) {
 }
 
 struct list *get_split_diag(struct automaton *aut) {
-    split_set = true;
-    do_regexp(aut);
+    do_regexp(aut, true);
 
     return aut->transitions;
 }
 
 
-void do_regexp(struct automaton *aut) {
+void do_regexp(struct automaton *aut, bool split) {
     tr_amount = 0;
 
     /*** add new initial state ***/
@@ -76,16 +73,16 @@ void do_regexp(struct automaton *aut) {
     }
 
 
-    /*** if !split_set, while more than one transition ***/
+    /*** if !split, while more than one transition ***/
     /*** else, while more than 2 states, or more than one transition with the same sub ***/
-    while ((!split_set && aut->transitions->next) ||
-	   (split_set && (aut->states->next->next || multiple_tr(aut)))) {
+    while ((!split && aut->transitions->next) ||
+	   (split && (aut->states->next->next || multiple_tr(aut)))) {
+
+	phase_one(aut, split);    // 16-17, split: 12-19
 	
-	phase_one(aut);    // 16-17, split: 12-19
+	phase_two(aut, split);    // 18-19, split: 20-23
 	
-	phase_two(aut);    // 18-19, split: 20-23
-	
-	phase_three(aut);    // 21-31, split: 25-48
+	phase_three(aut, split);    // 21-31, split: 25-48
 
 	/*** prevent segfaults if the input network is wrong ***/
 	if (!aut->transitions)
@@ -136,7 +133,7 @@ bool multiple_tr(struct automaton *aut) {
     return false;
 }
 
-void phase_one(struct automaton *aut) {
+void phase_one(struct automaton *aut, bool split) {
     struct list *l = aut->states;
 
     /*** foreach state ***/
@@ -182,7 +179,7 @@ void phase_one(struct automaton *aut) {
 	    }
 
 	    /*** set sub ***/
-	    if (split_set) {
+	    if (split) {
 		if (st->final)
 		    tr->sub = st->id;
 		else
@@ -191,7 +188,7 @@ void phase_one(struct automaton *aut) {
 
 	    /*** replace state with new transition ***/
 	    state_detach(aut, st);
-	    state_destroy(st);
+	    free(st);
 
 	    transition_attach(aut, tr);
 	} else
@@ -199,7 +196,7 @@ void phase_one(struct automaton *aut) {
     }
 }
 
-void phase_two(struct automaton *aut) {
+void phase_two(struct automaton *aut, bool split) {
     struct map_item **tr_hashmap = hashmap_create();
     struct list *ids = NULL;
 
@@ -212,7 +209,7 @@ void phase_two(struct automaton *aut) {
 	/*** create look-up id ***/
 	char *lookup;
 	
-	if (tr1->sub)
+	if (split && tr1->sub)
 	    lookup = calloc(strlen(tr1->src->id) + strlen(tr1->dest->id) + strlen(tr1->sub) + 1,
 				  sizeof (char));
 	else
@@ -221,7 +218,7 @@ void phase_two(struct automaton *aut) {
 	strcpy(lookup, tr1->src->id);
 	strcat(lookup, tr1->dest->id);
 
-	if (tr1->sub)
+	if (split && tr1->sub)
 	    strcat(lookup, tr1->sub);
 
 	struct map_item *item = hashmap_search(tr_hashmap, lookup, TRANSITION);
@@ -311,7 +308,7 @@ void phase_two(struct automaton *aut) {
     }
 }
 
-void phase_three(struct automaton *aut) {
+void phase_three(struct automaton *aut, bool split) {
     struct list *l = aut->states;
 
     /*** foreach state ***/
@@ -392,7 +389,7 @@ void phase_three(struct automaton *aut) {
 		    }
 
 		    /*** set sub ***/
-		    if (split_set) {
+		    if (split) {
 			if (st->final && tr->dest == fin && !tr_out->sub)
 			    tr->sub = st->id;
 			else

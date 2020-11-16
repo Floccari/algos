@@ -19,7 +19,7 @@ struct automaton *get_silent(struct state *st) {
     s_aut->initial = s_st;
 
     /*** save pointer to silent state into current state ***/
-    st->silent = s_st;
+    st->value = s_st;
 
     /*** recursive step ***/
     silent_visit(st);
@@ -64,12 +64,12 @@ void silent_visit(struct state *st) {
 					     list_create(s_next));
 
 		/*** save pointer to silent state into next state ***/
-		next->silent = s_next;
+		next->value = s_next;
 
 		/*** connect st->silent and next->silent ***/
 		struct transition *s_tr = transition_create(transition_id_create(tr_amount++));
-		s_tr->src = st->silent;
-		s_tr->dest = next->silent;
+		s_tr->src = (struct state *) st->value;
+		s_tr->dest = (struct state *) next->value;
 
 		transition_attach(s_aut, s_tr);
 		
@@ -80,8 +80,8 @@ void silent_visit(struct state *st) {
 
 		/*** connect st->silent and next->silent ***/
 		struct transition *s_tr = transition_create(transition_id_create(tr_amount++));
-		s_tr->src = st->silent;
-		s_tr->dest = next->silent;
+		s_tr->src = (struct state *) st->value;
+		s_tr->dest = (struct state *) next->value;
 
 		transition_attach(s_aut, s_tr);
 	    }
