@@ -47,6 +47,7 @@ struct action *action_create() {
 
 struct label *label_create(char *id, enum label_types type) {
     struct label *l = malloc(sizeof (struct label));
+    // memset(l, 0, sizeof (struct label));
     l->id = id;
     l->type = type;
 
@@ -120,6 +121,8 @@ struct link *link_create(char *id) {
 
 struct context *context_create(int aut_amount, int lk_amount) {
     struct context *c = malloc(sizeof (struct context));
+    memset(c, 0, sizeof (struct context));
+    
     c->states = calloc(aut_amount, sizeof (struct state *));
     c->buffers = calloc(lk_amount, sizeof (char *));
 
@@ -140,6 +143,9 @@ struct context *context_copy(struct context *c) {
 }
 
 void context_destroy(struct context *c) {
+    if (c->id)
+	free(c->id);
+    
     free(c->states);
     free(c->buffers);
     free(c);
@@ -171,12 +177,11 @@ bool context_compare(struct context *c1, struct context *c2) {
 }
 
 struct map_item *context_search(struct map_item **hashmap, struct context *c) {
-    char *id = context_digest(c);
-    int key = hash(id, HASH_TABLE_SIZE);
+    int key = hash(c->id, HASH_TABLE_SIZE);
     struct map_item *item = hashmap[key];
     
     while (item)
-	if (item->type == CONTEXT && strcmp(item->id, id) == 0 && context_compare((struct context *) item->value, c))
+	if (item->type == CONTEXT && strcmp(item->id, c->id) == 0 && context_compare((struct context *) item->value, c))
 	    return item;
 	else
 	    item = item->next;

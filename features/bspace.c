@@ -67,6 +67,7 @@ struct network *compute(struct network *net, bool comp) {
     
     memset(c->buffers, 0, sizeof (char *) * net->lk_amount);
     
+    c->id = context_digest(c);
     c->current_obs = get_last(net->observation);    // since it's stored in REVERSE ORDER
 
     /*** create initial state and insert it ***/
@@ -83,8 +84,7 @@ struct network *compute(struct network *net, bool comp) {
     bs_aut->initial = st;
 
     /*** add context to hashmap ***/
-    hashmap_insert(ct_hashmap, map_item_create_with_sub(context_digest(c),
-							CONTEXT, c, st));
+    hashmap_insert(ct_hashmap, map_item_create_with_sub(c->id, CONTEXT, c, st));
 
     /*** recursive step ***/
     comp_set = comp;
@@ -141,6 +141,9 @@ void step(struct state *current_bs_state) {
 
 		    ls = ls->next;
 		}
+
+		/*** set context id ***/
+		new_context->id = context_digest(new_context);
 
 		if (comp_set) {
 		    /*** skip transition if not applicable ***/
@@ -210,7 +213,7 @@ void step(struct state *current_bs_state) {
 		transition_attach(bs_aut, new_tr);
 
 		/*** add new_context to the hashmap ***/
-		hashmap_insert(ct_hashmap, map_item_create_with_sub(context_digest(new_context),
+		hashmap_insert(ct_hashmap, map_item_create_with_sub(new_context->id,
 								    CONTEXT, new_context, new_state));
 
 		/*** explore the new state completely ***/

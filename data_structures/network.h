@@ -37,7 +37,7 @@ struct label {
 
 struct transition {
     char *id;
-    char *sub;    // used by get_split_diag (../features/diag.h)
+    void *value;    // used to store various pointers
     struct action *act_in;
     struct list *act_out;
     struct label *obs;
@@ -64,6 +64,7 @@ struct link {
 };
 
 struct context {
+    char *id;
     int aut_amount;
     int lk_amount;
     struct state **states;    // current state of every automaton

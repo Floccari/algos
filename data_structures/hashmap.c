@@ -24,7 +24,7 @@ struct map_item **hashmap_create() {
     return hashmap;
 }
 
-void hashmap_empty(struct map_item **hashmap) {
+void hashmap_empty(struct map_item **hashmap, bool free_ids) {
     for (int i = 0; i < HASH_TABLE_SIZE; i++)
 	if (hashmap[i]) {
 	    struct map_item *item = hashmap[i];
@@ -32,6 +32,10 @@ void hashmap_empty(struct map_item **hashmap) {
 	    
 	    while (item) {
 		struct map_item *next = item->next;
+
+		if (free_ids)
+		    free(item->id);
+		
 		free(item);
 		item = next;
 	    }

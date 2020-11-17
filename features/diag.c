@@ -100,11 +100,11 @@ bool multiple_tr(struct automaton *aut) {
     while (l) {
 	struct transition *tr = (struct transition *) l->value;
 
-	if (!tr->sub) {
+	if (!tr->value) {
 	    /*** check for multiple transitions with no sub ***/
 	    if (empty_tr) {
 		/*** cleanup ***/
-		hashmap_empty(sub_hashmap);
+		hashmap_empty(sub_hashmap, false);
 		free(sub_hashmap);
 		
 		return true;
@@ -112,18 +112,19 @@ bool multiple_tr(struct automaton *aut) {
 		empty_tr = true;
 	} else {
 	    /*** check for multiple transitions with the same sub ***/
-	    struct map_item *item = hashmap_search(sub_hashmap, tr->sub, TRANSITION);
+	    struct state *st = (struct state *) tr->value;
+	    struct map_item *item = hashmap_search(sub_hashmap, st->id, TRANSITION);
 
 	    if (item) {
 		/*** cleanup ***/
-		hashmap_empty(sub_hashmap);
+		hashmap_empty(sub_hashmap, false);
 		free(sub_hashmap);
 
 		return true;
 	    } else {
 		/*** add transition to the hashmap ***/
 		hashmap_insert(sub_hashmap,
-			       map_item_create(tr->sub, TRANSITION, tr));
+			       map_item_create(st->id, TRANSITION, tr));
 	    }
 	}
 
@@ -178,12 +179,12 @@ void phase_one(struct automaton *aut, bool split) {
 		tr->rel = label_create(id, RELEVANCE);
 	    }
 
-	    /*** set sub ***/
+	    /*** set sub (using the relative comp state) ***/
 	    if (split) {
 		if (st->final)
-		    tr->sub = st->id;
+		    tr->value = st->value;
 		else
-		    tr->sub = tr_out->sub;
+		    tr->value = tr_out->value;
 	    }
 
 	    /*** replace state with new transition ***/
@@ -198,7 +199,6 @@ void phase_one(struct automaton *aut, bool split) {
 
 void phase_two(struct automaton *aut, bool split) {
     struct map_item **tr_hashmap = hashmap_create();
-    struct list *ids = NULL;
 
     struct list *l = aut->transitions;
 
@@ -209,17 +209,20 @@ void phase_two(struct automaton *aut, bool split) {
 	/*** create look-up id ***/
 	char *lookup;
 	
-	if (split && tr1->sub)
-	    lookup = calloc(strlen(tr1->src->id) + strlen(tr1->dest->id) + strlen(tr1->sub) + 1,
+	if (split && tr1->value) {
+	    struct state *st = (struct state *) tr1->value;
+	    lookup = calloc(strlen(tr1->src->id) + strlen(tr1->dest->id) + strlen(st->id) + 1,
 				  sizeof (char));
-	else
+	} else
 	    lookup = calloc(strlen(tr1->src->id) + strlen(tr1->dest->id) + 1, sizeof (char));
 	
 	strcpy(lookup, tr1->src->id);
 	strcat(lookup, tr1->dest->id);
 
-	if (split && tr1->sub)
-	    strcat(lookup, tr1->sub);
+	if (split && tr1->value) {
+	    struct state *st = (struct state *) tr1->value;	    
+	    strcat(lookup, st->id);
+	}
 
 	struct map_item *item = hashmap_search(tr_hashmap, lookup, TRANSITION);
 
@@ -286,26 +289,13 @@ void phase_two(struct automaton *aut, bool split) {
 	    hashmap_insert(tr_hashmap,
 			   map_item_create(lookup, TRANSITION, tr1));
 
-	    /*** save pointer to look-up id for later cleanup ***/
-	    ids = head_insert(ids,
-			      list_create(lookup));
-
 	    l = l->next;
 	}
     }
 
     /*** cleanup ***/
-    hashmap_empty(tr_hashmap);
+    hashmap_empty(tr_hashmap, true);
     free(tr_hashmap);
-
-    l = ids;
-
-    while (l) {
-	struct list *next = l->next;
-	free(l->value);
-	free(l);
-	l = next;
-    }
 }
 
 void phase_three(struct automaton *aut, bool split) {
@@ -388,12 +378,12 @@ void phase_three(struct automaton *aut, bool split) {
 			tr->rel = label_create(id, RELEVANCE);
 		    }
 
-		    /*** set sub ***/
+		    /*** set sub (using the relative comp state) ***/
 		    if (split) {
-			if (st->final && tr->dest == fin && !tr_out->sub)
-			    tr->sub = st->id;
+			if (st->final && tr->dest == fin && !tr_out->value)
+			    tr->value = st->value;
 			else
-			    tr->sub = tr_out->sub;
+			    tr->value = tr_out->value;
 		    }
 
 		    /*** attach the transition ***/

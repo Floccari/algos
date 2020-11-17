@@ -36,7 +36,7 @@ struct map_item *map_item_create_with_sub(char *id, enum types type, void *value
 
 struct map_item **hashmap_create();
 
-void hashmap_empty(struct map_item **hashmap);
+void hashmap_empty(struct map_item **hashmap, bool free_ids);
 
 int hash(char *id, int m);
 
