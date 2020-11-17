@@ -30,4 +30,6 @@ automaton networks and stuff
 
 ***VERSIONE 4***
 * Aggiunto il secondo algoritmo per le espressioni regolari, rifattorizzato assieme al primo
-* Aggiuno l'algoritmo per calcolare le chiusure silenziose (ancora da decorare)
+* Aggiunto l'algoritmo per calcolare le chiusure silenziose (da decorare) **(pseudocodice)**
+* Aggiunto l'algoritmo per calcolare lo spazio delle chiusure (da decorare) **(pseudocodice)**
+* Aggiunto il comando dctor per calcolare il diagnosticatore (incompleto)
