@@ -47,12 +47,35 @@ struct automaton *get_silent_space(struct automaton *bspace_aut) {
 	    if (initial)
 		sspace_aut->initial = s_st;
 
-	    /*** insert state into the hashmap ***/
-	    hashmap_insert(s_hashmap,
-			   map_item_create(st->id, STATE, s_st));
-
 	    /*** save pointer to the silent closure inside the state ***/
 	    s_st->value = closure;
+	}
+
+	l = l->next;
+    }
+
+    l = sspace_aut->states;
+
+    /*** foreach sspace state (closure) ***/
+    while (l) {
+	struct state *st = (struct state *) l->value;
+	struct automaton *closure = (struct automaton *) st->value;
+	
+	struct list *ls = closure->states;
+
+	/*** foreach state in the closure ***/
+	while (ls) {
+	    struct state *s_st = (struct state *) ls->value;
+
+	    /*** add st to the hashmap with id = strcat(st->id, s_st->id) ***/
+	    char *id = calloc(strlen(st->id) + strlen(s_st->id) + 1, sizeof (char));
+	    strcpy(id, st->id);
+	    strcat(id, s_st->id);
+
+	    hashmap_insert(s_hashmap,
+			   map_item_create(id, STATE, st));
+
+	    ls = ls->next;
 	}
 
 	l = l->next;
@@ -66,37 +89,47 @@ struct automaton *get_silent_space(struct automaton *bspace_aut) {
 	struct transition *tr = lt->value;
 
 	if (tr->obs) {
-	    struct map_item *item = hashmap_search(s_hashmap, tr->dest->id, STATE);
+	    /*** build dest lookup id ***/
+	    char *id = calloc((2 * strlen(tr->dest->id)) + 1, sizeof (char));
+	    strcpy(id, tr->dest->id);
+	    strcat(id, tr->dest->id);
+
+	    struct map_item *item = hashmap_search(s_hashmap, id, STATE);
 	    struct state *dest = (struct state *) item->value;
+
+	    /*** cleanup id ***/
+	    free(id);
 
 	    struct list *l = sspace_aut->states;
 
 	    /*** foreach sspace state (closure) ***/
 	    while (l) {
 		struct state *st = (struct state *) l->value;
-		struct automaton *closure = (struct automaton *) st->value;
-	
-		struct list *ls = closure->states;
 
-		/*** foreach state in the closure ***/
-		while (ls) {
-		    struct state *s_st = (struct state *) ls->value;
+		/*** build src lookup id ***/
+		char *id = calloc(strlen(st->id) + strlen(tr->src->id) + 1, sizeof (char));
+		strcpy(id, st->id);
+		strcat(id, tr->src->id);
 
-		    if (s_st->value == tr->src) {
-			/*** this closure (st) is connected to dest ***/
-			struct transition *s_tr = transition_create(transition_id_create(tr_amount++));
-			s_tr->src = st;
-			s_tr->dest = dest;
-			
-			s_tr->obs = tr->obs;
-			s_tr->rel = tr->rel;
-			s_tr->value = s_st->value;
-			
-			transition_attach(sspace_aut, s_tr);
-		    }
+		item = hashmap_search(s_hashmap, id, STATE);
 
-		    ls = ls->next;
+		if (item) {
+		    struct state *src = (struct state *) item->value;
+		    
+		    /*** create the transition and attach it ***/
+		    struct transition *s_tr = transition_create(transition_id_create(tr_amount++));
+		    s_tr->src = src;
+		    s_tr->dest = dest;
+		    
+		    s_tr->obs = tr->obs;
+		    s_tr->rel = tr->rel;
+		    s_tr->value = src->value;
+		    
+		    transition_attach(sspace_aut, s_tr);
 		}
+		    
+		/*** cleanup id ***/
+		free(id);
 
 		l = l->next;
 	    }
@@ -106,7 +139,7 @@ struct automaton *get_silent_space(struct automaton *bspace_aut) {
     }
 
     /*** cleanup ***/
-    hashmap_empty(s_hashmap, false);
+    hashmap_empty(s_hashmap, true);
     free(s_hashmap);
     
     return sspace_aut;
