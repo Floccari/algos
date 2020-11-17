@@ -14,7 +14,6 @@ extern void yyset_in(FILE *in);
 
 int main(int argc, char **argv) {
     FILE *fc;
-    hashmap = hashmap_create();
 
     /*** help message ***/
     if (argc < 2 || argc > 3 ||
@@ -32,6 +31,7 @@ int main(int argc, char **argv) {
 	printf("\tbspace\tCompute the behavioral space of the network\n");
 	printf("\tcomp\tCompute a behavioral subspace of the network given an observation\n");
 	printf("\tdiag\tOutput a diagnosis given a behavioral subspace\n");
+	printf("\tdctor\tBuild the diagnosticator of a network given its behavioral space\n");
 	
 	exit(0);
     }
@@ -42,43 +42,52 @@ int main(int argc, char **argv) {
 	yyset_in(fc);
     }
 
+    /*** parse input network ***/
+    yyparse();
+    hashmap_empty(hashmap, false);
+    free(hashmap);
+
     /*** actions ***/
     if (strcmp(argv[1], "test") == 0) {
-	yyparse();
 
 	network_serialize(stdout, net);
-
 	exit(0);
+	
     } else if (strcmp(argv[1], "dot") == 0) {
-	yyparse();
 
 	network_to_dot(stdout, net);
-
 	exit(0);
+	
     } else if (strcmp(argv[1], "bspace") == 0) {
-	yyparse();
 
 	struct network *bs_net = bspace_compute(net);
 	network_print_subs(stdout, net, bs_net, false);
 	network_serialize(stdout, bs_net);
-
 	exit(0);
+	
     } else if (strcmp(argv[1], "comp") == 0) {
-	yyparse();
 
 	struct network *c_net = comp_compute(net);
 	network_print_subs(stdout, net, c_net, true);
 	network_serialize(stdout, c_net);
-
 	exit(0);
+	
     } else if (strcmp(argv[1], "diag") == 0) {
-	yyparse();
 
 	struct automaton *aut = (struct automaton *) net->automatons->value;
 	char *diagnosis = get_diagnosis(aut);
 	fprintf(stdout, "%s\n", diagnosis);
-
 	exit(0);
+	
+    } else if (strcmp(argv[1], "dctor") == 0) {
+
+	struct network *dctor = network_create("dctor_net");
+	struct automaton *in = (struct automaton *) net->automatons->value;
+	dctor->automatons = head_insert(dctor->automatons,
+					list_create(get_silent_space(in)));
+	network_serialize(stdout, dctor);
+	exit(0);
+	
     } else 
 	printf("Unknown action\n");
     

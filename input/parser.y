@@ -41,7 +41,9 @@ struct map_item **hashmap;
 program : net-decl aut-decl observation
 	;
 
-net-decl : NETWORK ID {net = network_create(lexval);}
+net-decl : NETWORK ID {net = network_create(lexval);
+ 	   	       hashmap = hashmap_create();}
+		       
 	   ':' aut-list ev-list link-list END
 	 ;
 
