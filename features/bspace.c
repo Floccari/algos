@@ -94,6 +94,7 @@ struct network *compute(struct network *net, bool comp) {
     prune(bs_net);
 
     /*** cleanup (does not delete contexts) ***/
+    hashmap_empty(ct_hashmap, false);
     free(ct_hashmap);
     
     return bs_net;

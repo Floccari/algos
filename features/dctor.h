@@ -5,6 +5,6 @@
 #include "../data_structures/hashmap.h"
 #include "../data_structures/network.h"
 
-struct automaton *get_silent(struct state *st);
+struct automaton *get_silent_space(struct automaton *bspace_aut);
 
 #endif
