@@ -12,7 +12,9 @@ struct automaton *get_silent_space(struct automaton *bspace_aut) {
     struct automaton *sspace_aut = automaton_create("sspace");
     struct map_item **s_hashmap = hashmap_create();
 
-    struct list *l = bspace_aut->states;
+    /*** some lists are cycled in reverse order to make the output automaton prettier ***/
+    
+    struct list *l = get_last(bspace_aut->states);
 
     /*** foreach bspace state ***/
     while (l) {
@@ -51,7 +53,7 @@ struct automaton *get_silent_space(struct automaton *bspace_aut) {
 	    s_st->value = closure;
 	}
 
-	l = l->next;
+	l = l->prev;
     }
 
     l = sspace_aut->states;
@@ -81,7 +83,7 @@ struct automaton *get_silent_space(struct automaton *bspace_aut) {
 	l = l->next;
     }
 
-    struct list *lt = bspace_aut->transitions;
+    struct list *lt = get_last(bspace_aut->transitions);
     tr_amount = 0;
 
     /*** foreach observable bspace transition ***/
@@ -100,7 +102,7 @@ struct automaton *get_silent_space(struct automaton *bspace_aut) {
 	    /*** cleanup id ***/
 	    free(id);
 
-	    struct list *l = sspace_aut->states;
+	    struct list *l = get_last(sspace_aut->states);
 
 	    /*** foreach sspace state (closure) ***/
 	    while (l) {
@@ -131,11 +133,11 @@ struct automaton *get_silent_space(struct automaton *bspace_aut) {
 		/*** cleanup id ***/
 		free(id);
 
-		l = l->next;
+		l = l->prev;
 	    }
 	}
 
-	lt = lt->next;
+	lt = lt->prev;
     }
 
     /*** cleanup ***/
