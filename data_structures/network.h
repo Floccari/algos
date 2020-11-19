@@ -131,4 +131,10 @@ char *transition_id_create(int index);
 
 char *univ_tr_id_create(int index);
 
+struct label *label_cat_create(struct label *lab1, struct label *lab2);
+
+struct label *label_alt_create(struct label *lab1, struct label *lab2);
+
+struct label *label_cat_auto_create(struct label *lab1, struct label *lab_auto, struct label *lab2);
+
 #endif

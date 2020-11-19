@@ -535,3 +535,114 @@ char *univ_tr_id_create(int index) {
     return id;
 }
 
+struct label *label_cat_create(struct label *lab1, struct label *lab2) {
+    int l1 = (lab1) ? strlen(lab1->id) : 0;
+    int l2 = (lab2) ? strlen(lab2->id) : 0;
+
+    if (l1 + l2 > 0) {
+	char *id = calloc(l1 + l2 + 1, sizeof (char));
+	char *p = id;
+
+	if (lab1)
+	    strcpy(p, lab1->id);
+
+	p += l1;
+
+	if (lab2)
+	    strcpy(p, lab2->id);
+
+	p += l2;
+	*p++ = '\0';
+
+	return label_create(id, RELEVANCE);
+    }
+
+    return NULL;
+}
+
+struct label *label_alt_create(struct label *lab1, struct label *lab2) {
+    int l1 = (lab1) ? strlen(lab1->id) : 0;
+    int l2 = (lab2) ? strlen(lab2->id) : 0;
+
+    int extra = (lab1 && lab2) ? 1 : 3;
+
+    if (l1 + l2 > 0) {
+	char *id = calloc(l1 + l2 + extra + 1, sizeof (char));
+	char *p = id;
+
+	if (lab1) {
+	    if (lab2) {
+		strcpy(p, lab1->id);
+		p += l1;
+	    } else {
+		*p++ = '(';
+		strcpy(p, lab1->id);
+
+		p += l1;
+		*p++ = ')';
+		*p++ = '?';
+	    }
+	}
+
+
+	if (lab1 && lab2)
+	    *p++ = '|';
+
+	if (lab2) {
+	    if (lab1) {
+		strcpy(p, lab2->id);
+		p += l2;			
+	    } else {
+		*p++ = '(';
+		strcpy(p, lab2->id);
+			    
+		p += l2;
+		*p++ = ')';
+		*p++ = '?';
+	    }
+	}
+
+	*p++ = '\0';
+
+	return label_create(id, RELEVANCE);
+    }
+
+    return NULL;
+}    
+
+struct label *label_cat_auto_create(struct label *lab1, struct label *lab_auto, struct label *lab2) {
+    int l1 = (lab1) ? strlen(lab1->id) : 0;
+    int l2 = (lab2) ? strlen(lab2->id) : 0;
+    int l_auto = (lab_auto) ? strlen(lab_auto->id) : 0;
+
+    int extra = (lab_auto) ? 3 : 0;
+
+    if (l1 + l2 + l_auto > 0) {
+	char *id = calloc(l1 + l2 + l_auto + extra + 1, sizeof (char));
+	char *p = id;
+			
+	if (lab1)
+	    strcpy(p, lab1->id);
+			
+	p += l1;
+			
+	if (lab_auto) {
+	    *p++ = '(';
+	    strcpy(p, lab_auto->id);
+			    
+	    p += l_auto;
+	    *p++ = ')';
+	    *p++ = '*';
+	}
+			
+	if (lab2)
+	    strcpy(p, lab2->id);
+			
+	p += l2;
+	*p++ = '\0';
+
+	return label_create(id, RELEVANCE);
+    }
+
+    return NULL;
+}

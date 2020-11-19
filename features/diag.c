@@ -158,27 +158,8 @@ void phase_one(struct automaton *aut, bool split) {
 	    tr->dest = tr_out->dest;
 
 	    /*** build the appropriate label ***/
-	    int l_in = (tr_in->rel) ? strlen(tr_in->rel->id) : 0;
-	    int l_out = (tr_out->rel) ? strlen(tr_out->rel->id) : 0;
-
-	    if (l_in + l_out > 0) {
-		char *id = calloc(l_in + l_out + 1, sizeof (char));
-		char *p = id;
-
-		if (tr_in->rel)
-		    strcpy(p, tr_in->rel->id);
-
-		p += l_in;
-
-		if (tr_out->rel)
-		    strcpy(p, tr_out->rel->id);
-
-		p += l_out;
-		*p++ = '\0';
-
-		tr->rel = label_create(id, RELEVANCE);
-	    }
-
+	    tr->rel = label_cat_create(tr_in->rel, tr_out->rel);
+	    
 	    /*** set sub (using the relative comp state) ***/
 	    if (split) {
 		if (st->final)
@@ -237,51 +218,7 @@ void phase_two(struct automaton *aut, bool split) {
 		struct transition *tr2 = (struct transition *) item->value;
 
 		/*** build the appropriate label and assign it to tr2 ***/
-		int l1 = (tr1->rel) ? strlen(tr1->rel->id) : 0;
-		int l2 = (tr2->rel) ? strlen(tr2->rel->id) : 0;
-
-		int extra = (tr1->rel && tr2->rel) ? 1 : 3;
-
-		if (l1 + l2 > 0) {
-		    char *id = calloc(l1 + l2 + extra + 1, sizeof (char));
-		    char *p = id;
-
-		    if (tr1->rel) {
-			if (tr2->rel) {
-			    strcpy(p, tr1->rel->id);
-			    p += l1;
-			} else {
-			    *p++ = '(';
-			    strcpy(p, tr1->rel->id);
-
-			    p += l1;
-			    *p++ = ')';
-			    *p++ = '?';
-			}
-		    }
-
-
-		    if (tr1->rel && tr2->rel)
-			*p++ = '|';
-
-		    if (tr2->rel) {
-			if (tr1->rel) {
-			    strcpy(p, tr2->rel->id);
-			    p += l2;			
-			} else {
-			    *p++ = '(';
-			    strcpy(p, tr2->rel->id);
-			    
-			    p += l2;
-			    *p++ = ')';
-			    *p++ = '?';
-			}
-		    }
-
-		    *p++ = '\0';
-
-		    tr2->rel = label_create(id, RELEVANCE);
-		}
+		tr2->rel = label_alt_create(tr1->rel, tr2->rel);
 		
 		/*** remove tr1 ***/
 		transition_detach(aut, tr1);
@@ -308,7 +245,7 @@ void phase_three(struct automaton *aut, bool split) {
 	/*** that is not _init or _fin ***/
 	if (st != init && st != fin) {
 	    struct list *lt_in = st->tr_in;
-	    char *autotr_rel = NULL;
+	    struct label *autotr = NULL;
 
 	    /*** check if there is an auto-transition ***/
 	    /*** at most one, since phase 2 removed parallel transitions ***/
@@ -317,7 +254,7 @@ void phase_three(struct automaton *aut, bool split) {
 
 		if (tr->src == tr->dest) {
 		    if (tr->rel)
-			autotr_rel = tr->rel->id;
+			autotr = tr->rel;
 
 		    /*** remove the transition and break ***/
 		    transition_detach(aut, tr);
@@ -345,38 +282,7 @@ void phase_three(struct automaton *aut, bool split) {
 		    tr->dest = tr_out->dest;
 
 		    /*** build the appropriate label ***/
-		    int l_in = (tr_in->rel) ? strlen(tr_in->rel->id) : 0;
-		    int l_out = (tr_out->rel) ? strlen(tr_out->rel->id) : 0;
-		    int l_auto = (autotr_rel) ? strlen(autotr_rel) : 0;
-
-		    int extra = (autotr_rel) ? 3 : 0;
-
-		    if (l_in + l_out + l_auto > 0) {
-			char *id = calloc(l_in + l_out + l_auto + extra + 1, sizeof (char));
-			char *p = id;
-			
-			if (tr_in->rel)
-			    strcpy(p, tr_in->rel->id);
-			
-			p += l_in;
-			
-			if (autotr_rel) {
-			    *p++ = '(';
-			    strcpy(p, autotr_rel);
-			    
-			    p += l_auto;
-			    *p++ = ')';
-			    *p++ = '*';
-			}
-			
-			if (tr_out->rel)
-			    strcpy(p, tr_out->rel->id);
-			
-			p += l_out;
-			*p++ = '\0';
-
-			tr->rel = label_create(id, RELEVANCE);
-		    }
+		    tr->rel = label_cat_auto_create(tr_in->rel, autotr, tr_out->rel);
 
 		    /*** set sub (using the relative comp state) ***/
 		    if (split) {

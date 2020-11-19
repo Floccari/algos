@@ -38,7 +38,7 @@ struct automaton *get_diagnosticator(struct automaton *bspace_aut) {
 	/*** compute the split regexp ***/
 	struct list *exp = get_split_diag(closure);
 
-	char *cl_regexp = NULL;
+	struct label *cl_regexp = NULL;
 
 	/*** foreach expression ***/
 	while (exp) {
@@ -51,19 +51,11 @@ struct automaton *get_diagnosticator(struct automaton *bspace_aut) {
 		struct transition *ts = (struct transition *) lt->value;
 
 		/*** if this transition was generated from this exit state ***/
-		if (((struct state *) ts->value)->id == ((struct state *) tr->value)->id) {
+		if (ts->value == tr->value) {
 
 		    /*** concatenate regexp with ts->rel ***/
-		    if (tr->rel && ts->rel) {
-			char *id = calloc(strlen(tr->rel->id) + strlen(ts->rel->id) + 1, sizeof (char));
-			strcpy(id, tr->rel->id);
-			strcat(id, ts->rel->id);
-			
-			ts->rel->id = id;
-		    } else
-			ts->rel = tr->rel;
+		    ts->rel = label_cat_create(tr->rel, ts->rel);
 		}
-
 
 		lt = lt->next;
 	    }
@@ -75,58 +67,14 @@ struct automaton *get_diagnosticator(struct automaton *bspace_aut) {
 	    if (bs->final) {
 
 		/*** build the appropriate label ***/
-		int l1 = (cl_regexp) ? strlen(cl_regexp) : 0;
-		int l2 = (tr->rel) ? strlen(tr->rel->id) : 0;
-
-		int extra = (cl_regexp && tr->rel) ? 1 : 3;
-
-		if (l1 + l2 > 0) {
-		    char *id = calloc(l1 + l2 + extra + 1, sizeof (char));
-		    char *p = id;
-
-		    if (cl_regexp) {
-			if (tr->rel) {
-			    strcpy(p, cl_regexp);
-			    p += l1;
-			} else {
-			    *p++ = '(';
-			    strcpy(p, cl_regexp);
-
-			    p += l1;
-			    *p++ = ')';
-			    *p++ = '?';
-			}
-		    }
-
-
-		    if (cl_regexp && tr->rel)
-			*p++ = '|';
-
-		    if (tr->rel) {
-			if (cl_regexp) {
-			    strcpy(p, tr->rel->id);
-			    p += l2;			
-			} else {
-			    *p++ = '(';
-			    strcpy(p, tr->rel->id);
-			    
-			    p += l2;
-			    *p++ = ')';
-			    *p++ = '?';
-			}
-		    }
-
-		    *p++ = '\0';
-
-		    cl_regexp = id;
-		}
+		cl_regexp = label_alt_create(cl_regexp, tr->rel);
 	    }
 
 	    exp = exp->next;
 	}
 
 	/*** assign cl_regexp to st ***/
-	st->value = label_create(cl_regexp, RELEVANCE);	    
+	st->value = cl_regexp;
 	
 	l = l->next;
     }
