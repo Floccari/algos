@@ -561,6 +561,10 @@ struct label *label_cat_create(struct label *lab1, struct label *lab2) {
 }
 
 struct label *label_alt_create(struct label *lab1, struct label *lab2) {
+    /*** reduction ***/
+    if (lab1 && lab2 && strcmp(lab1->id, lab2->id) == 0)
+	return lab1;
+    
     int l1 = (lab1) ? strlen(lab1->id) : 0;
     int l2 = (lab2) ? strlen(lab2->id) : 0;
 
@@ -575,6 +579,14 @@ struct label *label_alt_create(struct label *lab1, struct label *lab2) {
 		strcpy(p, lab1->id);
 		p += l1;
 	    } else {
+		/*** reduction ***/
+		if (lab1->id[0] == '(') {
+		    char *q = memchr(&lab1->id[1], ')', l1);
+
+		    if (q++ && *q++ == '?' && *q++ == '\0')
+			return lab1;
+		}
+		
 		*p++ = '(';
 		strcpy(p, lab1->id);
 
@@ -584,7 +596,6 @@ struct label *label_alt_create(struct label *lab1, struct label *lab2) {
 	    }
 	}
 
-
 	if (lab1 && lab2)
 	    *p++ = '|';
 
@@ -593,6 +604,14 @@ struct label *label_alt_create(struct label *lab1, struct label *lab2) {
 		strcpy(p, lab2->id);
 		p += l2;			
 	    } else {
+		/*** reduction ***/
+		if (lab2->id[0] == '(') {
+		    char *q = memchr(&lab2->id[1], ')', l1);
+
+		    if (q++ && *q++ == '?' && *q++ == '\0')
+			return lab2;
+		}
+		
 		*p++ = '(';
 		strcpy(p, lab2->id);
 			    
