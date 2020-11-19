@@ -4,23 +4,23 @@ network net:
 
 	l2 c3 -> c2;
 	l3 c2 -> c3;
-end	
+end
 
 automaton c2:
 	  states: 20, 21;
 	  initial: 20;
 	  
-	  t2a 20 -> 21 obs "o2" in "e2(l2)" out "e3(l3)";
-	  t2b 21 -> 20 rel "r" out "e3(l3)";
+	  t2a 20 -> 21 obs "o2" in "e2[l2]" out "e3[l3]";
+	  t2b 21 -> 20 rel "r" out "e3[l3]";
 end
 
 automaton c3:
 	  states: 30, 31;
 	  initial: 30;
 	  
-	  t3a 30 -> 31 obs "o3" out "e2(l2)";
-	  t3b 31 -> 30 in "e3(l3)";
-	  t3c 31 -> 31 rel "f" in "e3(l3)";
+	  t3a 30 -> 31 obs "o3" out "e2[l2]";
+	  t3b 31 -> 30 in "e3[l3]";
+	  t3c 31 -> 31 rel "f" in "e3[l3]";
 end
 
 obs: o3, o2;

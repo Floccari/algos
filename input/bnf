@@ -12,17 +12,18 @@ aut-decl -> aut aut-decl | aut
 aut -> automaton id: st-list init tr-list end
 st-list -> states: st-id-list;
 st-id-list -> st, st-id-list | st
-st -> id | (id)
+st -> id regexp | [ id ] regexp
+regexp -> " diag " | eps
 init -> initial: id;
 tr-list -> tr tr-list | eps
 tr -> id id -> id obs-decl rel-decl in-decl out-decl;
 obs-decl -> obs " id " | eps
 rel-decl -> rel " id " | eps
 in-decl -> in " action-in " | eps
-action-in -> id(id)
-out-decl -> out "action-list" | eps
+action-in -> id [ id ]
+out-decl -> out " action-list " | eps
 action-list -> action-out, action-list | action-out
-action-out -> id(id)
+action-out -> id [ id ]
 observation -> obs: obs-label-list; | eps
 obs-label-list -> obs-label, obs-label-list | obs-label
 obs-label -> id

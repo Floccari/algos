@@ -14,7 +14,8 @@ struct state {
     char *id;
     enum dfs_colors color;
     bool final;
-    // 3 bytes
+    bool exit;
+    // 2 bytes
     void *value;    // used to store various pointers
     struct list *tr_in;
     struct list *tr_out;
@@ -118,7 +119,7 @@ struct map_item *context_search(struct map_item **hashmap, struct context *c);
 
 struct network *network_create(char *id);
 
-void network_serialize(FILE *fc, struct network *net);
+void network_serialize(FILE *fc, struct network *net, bool regexp);
 
 void network_print_subs(FILE *fc, struct network *net, struct network *comp_net, bool comp);
 

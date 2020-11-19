@@ -197,7 +197,7 @@ struct network *network_create(char *id) {
     return net;
 }
 
-void network_serialize(FILE *fc, struct network *net) {
+void network_serialize(FILE *fc, struct network *net, bool regexp) {
     /*** network ***/
     fprintf(fc, "network %s:\n", net->id);
     fprintf(fc, "\tautomatons: ");
@@ -269,21 +269,29 @@ void network_serialize(FILE *fc, struct network *net) {
 
 	if (ls) {
 	    struct state *s = (struct state *) ls->value;
+	    struct label *lab = (struct label *) s->value;
 
 	    if (s->final)
-		fprintf(fc, "(%s)", s->id);
+		fprintf(fc, "[%s]", s->id);
 	    else
-		fprintf(fc, "%s", s->id);		
+		fprintf(fc, "%s", s->id);
+
+	    if (regexp && lab && lab->id)
+		fprintf(fc, " \"%s\"", lab->id);
 
 	    ls = ls->prev;
     
 	    while (ls) {
 		struct state *s = (struct state *) ls->value;
-
+		struct label *lab = (struct label *) s->value;
+		
 		if (s->final)
-		    fprintf(fc, ", (%s)", s->id);
+		    fprintf(fc, ", [%s]", s->id);
 		else
 		    fprintf(fc, ", %s", s->id);		
+
+		if (regexp && lab && lab->id)
+		    fprintf(fc, " \"%s\"", lab->id);
 		
 		ls = ls->prev;
 	    }
@@ -310,7 +318,7 @@ void network_serialize(FILE *fc, struct network *net) {
 		fprintf(fc, " rel \"%s\"", tr->rel->id);
 
 	    if (tr->act_in)
-		fprintf(fc, " in \"%s(%s)\"", tr->act_in->event, tr->act_in->link->id);
+		fprintf(fc, " in \"%s[%s]\"", tr->act_in->event, tr->act_in->link->id);
 
 	    if (tr->act_out) {
 		struct list *lt = get_last(tr->act_out);
@@ -318,7 +326,7 @@ void network_serialize(FILE *fc, struct network *net) {
 		if (lt) {
 		    struct action *act = (struct action *) lt->value;
 		    
-		    fprintf(fc, " out \"%s(%s)", act->event, act->link->id);
+		    fprintf(fc, " out \"%s[%s]", act->event, act->link->id);
 		    
 		    lt = lt->prev;
 		}
@@ -326,7 +334,7 @@ void network_serialize(FILE *fc, struct network *net) {
 		while (lt) {
 		    struct action *act = (struct action *) lt->value;
 		    
-		    fprintf(fc, ", %s(%s)", act->event, act->link->id);
+		    fprintf(fc, ", %s[%s]", act->event, act->link->id);
 		    
 		    lt = lt->prev;
 		}

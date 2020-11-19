@@ -11,8 +11,8 @@ automaton c1:
 	  states: 10, 11;
 	  initial: 10;
 	  
-	  t1a 10 -> 11 in "e1(l1)";
-	  t1b 11 -> 10 in "e2(l3)";
+	  t1a 10 -> 11 in "e1[l1]";
+	  t1b 11 -> 10 in "e2[l3]";
 	  t1c 10 -> 11 rel "f1";
 end
 
@@ -20,16 +20,16 @@ automaton c2:
 	  states: 20, 21;
 	  initial: 20;
 
-	  t2a 20 -> 21 obs "o1" out "e1(l1), e3(l2)";
-	  t2b 21 -> 20 obs "o2" out "e1(l1)";
+	  t2a 20 -> 21 obs "o1" out "e1[l1], e3[l2]";
+	  t2b 21 -> 20 obs "o2" out "e1[l1]";
 end
 
 automaton c3:
 	  states: 30, 31;
 	  initial: 30;
 
-	  t3a 30 -> 31 out "e2(l3)";
-	  t3b 31 -> 30 in "e3(l2)";
-	  t3c 31 -> 31 rel "f3" in "e3(l2)";
+	  t3a 30 -> 31 out "e2[l3]";
+	  t3b 31 -> 30 in "e3[l2]";
+	  t3c 31 -> 31 rel "f3" in "e3[l2]";
 end
 

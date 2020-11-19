@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
     /*** actions ***/
     if (strcmp(argv[1], "test") == 0) {
 
-	network_serialize(stdout, net);
+	network_serialize(stdout, net, true);
 	exit(0);
 	
     } else if (strcmp(argv[1], "dot") == 0) {
@@ -62,14 +62,14 @@ int main(int argc, char **argv) {
 
 	struct network *bs_net = bspace_compute(net);
 	network_print_subs(stdout, net, bs_net, false);
-	network_serialize(stdout, bs_net);
+	network_serialize(stdout, bs_net, false);
 	exit(0);
 	
     } else if (strcmp(argv[1], "comp") == 0) {
 
 	struct network *c_net = comp_compute(net);
 	network_print_subs(stdout, net, c_net, true);
-	network_serialize(stdout, c_net);
+	network_serialize(stdout, c_net, false);
 	exit(0);
 	
     } else if (strcmp(argv[1], "diag") == 0) {
@@ -84,8 +84,8 @@ int main(int argc, char **argv) {
 	struct network *dctor = network_create("dctor_net");
 	struct automaton *in = (struct automaton *) net->automatons->value;
 	dctor->automatons = head_insert(dctor->automatons,
-					list_create(get_silent_space(in)));
-	network_serialize(stdout, dctor);
+					list_create(get_diagnosticator(in)));
+	network_serialize(stdout, dctor, true);
 	exit(0);
 	
     } else 

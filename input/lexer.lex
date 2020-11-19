@@ -21,7 +21,8 @@ digit		[0-9]
 letter		[a-zA-Z]
 alphanum	{letter}|{digit}
 id		{alphanum}*(_{alphanum}+)*
-other		[\":,;()]
+diag		[a-zA-Z0-9_()?|*]+
+other		[\":,;\[\]]
 
 %%
 
@@ -41,6 +42,7 @@ rel		{return REL;}
 in		{return IN;}
 out		{return OUT;}
 {id}		{lexval = newstring(yytext); return ID;}
+{diag}		{lexval = newstring(yytext); return DIAG;}
 {other}		{return *yytext;}
 .		{return ERROR;}
 

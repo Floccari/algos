@@ -33,7 +33,7 @@ struct map_item **hashmap;
 %}
 
 
-%token NETWORK AUTS EVS ARROW END AUT STS INIT OBS REL IN OUT ID
+%token NETWORK AUTS EVS ARROW END AUT STS INIT OBS REL IN OUT ID DIAG
 %token ERROR    
 
 %%
@@ -173,8 +173,10 @@ st : ID {// aut initialized in rule "aut"
 	 
 	 struct list *l = list_create(st);
 	 aut->states = head_insert(aut->states, l);}
+
+     regexp
 	   
-   | '(' ID {// aut initialized in rule "aut"
+   | '[' ID {// aut initialized in rule "aut"
              item = hashmap_search_with_sub(hashmap, lexval, STATE, aut);
 
 	     if (item)
@@ -188,8 +190,17 @@ st : ID {// aut initialized in rule "aut"
 	     struct list *l = list_create(st);
 	     aut->states = head_insert(aut->states, l);}
 
-     ')'
+     ']' regexp
    ;
+
+regexp : '"' ID {// st initialized in rule "st"
+       	         st->value = label_create(lexval, RELEVANCE);}
+	 '"'
+       | '"' DIAG {// st initialized in rule "st"
+       	           st->value = label_create(lexval, RELEVANCE);}
+	 '"'
+       | {/* eps */}
+       ;
 
 init : INIT ':' ID {item = hashmap_search_with_sub(hashmap, lexval, STATE, aut);
 
@@ -285,6 +296,22 @@ rel-decl : REL '"' ID {item = hashmap_search(hashmap, lexval, LABEL);
 	       	       // tr initialized in rule "tr"
 	       	       tr->rel = lab;}
 	   '"'
+	 | REL '"' DIAG {item = hashmap_search(hashmap, lexval, LABEL);
+
+	               	 if (item) {
+			     lab = (struct label *) item->value;
+			     
+			     if (lab->type != RELEVANCE)
+				 laberror();    // exits here
+			 } else
+			     lab = label_create(lexval, RELEVANCE);
+			 
+			 hashmap_insert(hashmap,
+					map_item_create(lab->id, LABEL, lab));
+			 
+			 // tr initialized in rule "tr"
+			 tr->rel = lab;}
+	   '"'
 	 | {/* eps */}
 	 ;
 
@@ -303,7 +330,7 @@ action-in : ID {act = action_create();
 	     
 		act->event = item->id;}
 
-	    '(' ID {item = hashmap_search(hashmap, lexval, LINK);
+	    '[' ID {item = hashmap_search(hashmap, lexval, LINK);
 
 	     	    if (!item)
 			nferror();    // exits here
@@ -316,7 +343,7 @@ action-in : ID {act = action_create();
 		    
 		    // act initialized in $2
 		    act->link = ln;}
-       	    ')'
+       	    ']'
           ;
 
 out-decl : OUT '"' action-list '"'
@@ -345,7 +372,7 @@ action-out : ID {act = action_create();
 		 
 		 act->event = item->id;}
 
-	     '(' ID {item = hashmap_search(hashmap, lexval, LINK);
+	     '[' ID {item = hashmap_search(hashmap, lexval, LINK);
 
 	     	     if (!item)
 			 nferror();    // exits here
@@ -358,7 +385,7 @@ action-out : ID {act = action_create();
 		     
 		     // act initialized in $2
 		     act->link = ln;}
-       	     ')'
+       	     ']'
            ;
 
 observation : OBS ':' obs-label-list ';'
