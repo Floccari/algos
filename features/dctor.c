@@ -63,9 +63,12 @@ struct automaton *get_diagnosticator(struct automaton *bspace_aut) {
 	    struct state *bs = (struct state *) tr->value;
 	
 	    /*** if this state is final (not exit) ***/
-	    /*** we know because bs is a bspace (unaltered) ***/
+	    /*** we know because bs is a bspace state (unaltered) ***/
 	    if (bs->final) {
 
+		/*** set sspace state (closure) as final ***/
+		st->final = true;
+		
 		/*** build the appropriate label ***/
 		cl_regexp = label_alt_create(cl_regexp, tr->rel);
 	    }
@@ -143,9 +146,14 @@ struct automaton *get_silent_space(struct automaton *bspace_aut) {
 	while (ls) {
 	    struct state *s_st = (struct state *) ls->value;
 
-	    /*** add st to the hashmap with id = strcat(st->id, s_st->id) ***/
-	    char *id = calloc(strlen(st->id) + strlen(s_st->id) + 1, sizeof (char));
+	    /*** add st to the hashmap ***/
+	    char *id = calloc(strlen(st->id) + strlen(s_st->id) + 2, sizeof (char));
 	    strcpy(id, st->id);
+
+	    char *p = id + strlen(st->id);
+	    *p++ = '#';
+	    *p++ = '\0';	
+	    
 	    strcat(id, s_st->id);
 
 	    hashmap_insert(s_hashmap,
@@ -166,8 +174,13 @@ struct automaton *get_silent_space(struct automaton *bspace_aut) {
 
 	if (tr->obs) {
 	    /*** build dest lookup id ***/
-	    char *id = calloc((2 * strlen(tr->dest->id)) + 1, sizeof (char));
+	    char *id = calloc((2 * strlen(tr->dest->id)) + 2, sizeof (char));
 	    strcpy(id, tr->dest->id);
+
+	    char *p = id + strlen(tr->dest->id);
+	    *p++ = '#';
+	    *p++ = '\0';
+	    
 	    strcat(id, tr->dest->id);
 
 	    struct map_item *item = hashmap_search(s_hashmap, id, STATE);
@@ -183,8 +196,13 @@ struct automaton *get_silent_space(struct automaton *bspace_aut) {
 		struct state *st = (struct state *) l->value;
 
 		/*** build src lookup id ***/
-		char *id = calloc(strlen(st->id) + strlen(tr->src->id) + 1, sizeof (char));
+		char *id = calloc(strlen(st->id) + strlen(tr->src->id) + 2, sizeof (char));
 		strcpy(id, st->id);
+
+		char *p = id + strlen(st->id);
+		*p++ = '#';
+		*p++ = '\0';
+		
 		strcat(id, tr->src->id);
 
 		item = hashmap_search(s_hashmap, id, STATE);

@@ -192,16 +192,26 @@ void phase_two(struct automaton *aut, bool split) {
 	
 	if (split && tr1->value) {
 	    struct state *st = (struct state *) tr1->value;
-	    lookup = calloc(strlen(tr1->src->id) + strlen(tr1->dest->id) + strlen(st->id) + 1,
+	    lookup = calloc(strlen(tr1->src->id) + strlen(tr1->dest->id) + strlen(st->id) + 2,
 				  sizeof (char));
 	} else
-	    lookup = calloc(strlen(tr1->src->id) + strlen(tr1->dest->id) + 1, sizeof (char));
+	    lookup = calloc(strlen(tr1->src->id) + strlen(tr1->dest->id) + 3, sizeof (char));
 	
 	strcpy(lookup, tr1->src->id);
+
+	char *p = lookup + strlen(tr1->src->id);
+	*p++ = '#';
+	*p++ = '\0';	
+	
 	strcat(lookup, tr1->dest->id);
 
 	if (split && tr1->value) {
-	    struct state *st = (struct state *) tr1->value;	    
+	    struct state *st = (struct state *) tr1->value;
+
+	    p += strlen(tr1->dest->id);
+	    *p++ = '#';
+	    *p++ = '\0';	
+	    
 	    strcat(lookup, st->id);
 	}
 
