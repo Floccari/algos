@@ -559,15 +559,23 @@ struct label *label_cat_create(struct label *lab1, struct label *lab2) {
 }
 
 struct label *label_alt_create(struct label *lab1, struct label *lab2) {
-    /*** reduction ***/
-    if (lab1 && lab2 && strcmp(lab1->id, lab2->id) == 0)
-	return lab1;
-    
     int l1 = (lab1) ? strlen(lab1->id) : 0;
     int l2 = (lab2) ? strlen(lab2->id) : 0;
 
     int extra = (lab1 && lab2) ? 1 : 3;
 
+    /*** reduction ***/
+    if (lab1 && lab2) {
+	if (strcmp(lab1->id, lab2->id) == 0)
+	    return lab1;
+
+	if (strstr(lab1->id, lab2->id) == lab1->id && lab1->id[l2] == '|')
+	    return lab1;
+
+	if (strstr(lab2->id, lab1->id) == lab2->id && lab2->id[l1] == '|')
+	    return lab2;
+    }
+    
     if (l1 + l2 > 0) {
 	char *id = calloc(l1 + l2 + extra + 1, sizeof (char));
 	char *p = id;
