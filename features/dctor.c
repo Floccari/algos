@@ -158,7 +158,7 @@ char *diagnosticate(struct automaton *dctor, struct list *observation) {
 	s_hashmap = new_hashmap;
 	
 	if (!empty)
-	    hashmap_empty(tmp, true);
+	    hashmap_empty(tmp, false);
 
 	free(tmp);
 
@@ -175,15 +175,17 @@ char *diagnosticate(struct automaton *dctor, struct list *observation) {
 	    
 	    while (item) {
 		struct state *st = item->value;
+		struct label *lab = NULL;
 
+		if (st->delta)
+		    label_create(st->delta, RELEVANCE);
+		
 		if (st->final) {
 		    if (initialized)
 			diagnosis = label_alt_create(diagnosis,
-						     label_cat_create((struct label *) st->value,
-								      label_create(st->delta, RELEVANCE)));
+						     label_cat_create((struct label *) st->value, lab));
 		    else {
-			diagnosis = label_cat_create((struct label *) st->value,
-						     st->delta ? label_create(st->delta, RELEVANCE) : NULL);
+			diagnosis = label_cat_create((struct label *) st->value, lab);
 			initialized = true;
 		    }
 		}
