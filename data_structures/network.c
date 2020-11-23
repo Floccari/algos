@@ -569,11 +569,35 @@ struct label *label_alt_create(struct label *lab1, struct label *lab2) {
 	if (strcmp(lab1->id, lab2->id) == 0)
 	    return lab1;
 
-	if (strstr(lab1->id, lab2->id) == lab1->id && lab1->id[l2] == '|')
-	    return lab1;
+	bool equal = true;
 
-	if (strstr(lab2->id, lab1->id) == lab2->id && lab2->id[l1] == '|')
-	    return lab2;
+	for (int i = 0; i < l1 && i < l2; i++)
+	    if (lab1->id[i] != lab2->id[i]) {
+		equal = false;
+		break;
+	    }
+
+	if (equal) {
+	    if (l1 < l2 && lab2->id[l1] == '|')
+		return lab2;
+	    else if (l2 < l1 && lab1->id[l2] == '|')
+		return lab1;
+	}	
+
+	equal = true;
+	
+	for (int i = 0; i < l1 && i < l2; i++)
+	    if (lab1->id[l1 - i - 1] != lab2->id[l2 - i - 1]) {
+		equal = false;
+		break;
+	    }
+
+	if (equal) {
+	    if (l1 < l2 && lab2->id[l2 - l1 - 1] == '|')
+		return lab2;
+	    else if (l2 < l1 && lab1->id[l1 - l2 - 1] == '|')
+		return lab1;
+	}
     }
     
     if (l1 + l2 > 0) {
