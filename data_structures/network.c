@@ -579,9 +579,28 @@ struct label *label_alt_create(struct label *lab1, struct label *lab2) {
 	    } else {
 		/*** reduction ***/
 		if (lab1->id[0] == '(') {
-		    char *q = memchr(&lab1->id[1], ')', l1);
+		    int count = 1;
+		    char *q = &lab1->id[1];
 
-		    if (q++ && *q++ == '?' && *q++ == '\0')
+		    while (*q != '\0') {
+			switch (*q) {
+			case '(':
+			    count++;
+			    break;
+			case ')':
+			    count--;
+			    break;
+			default:
+			    break;
+			}
+
+			if (count == 0)
+			    break;
+
+			q++;
+		    }
+
+		    if (*q++ == ')' && *q++ == '?' && *q++ == '\0')
 			return lab1;
 		}
 		
@@ -604,9 +623,28 @@ struct label *label_alt_create(struct label *lab1, struct label *lab2) {
 	    } else {
 		/*** reduction ***/
 		if (lab2->id[0] == '(') {
-		    char *q = memchr(&lab2->id[1], ')', l1);
+		    int count = 1;
+		    char *q = &lab2->id[1];
 
-		    if (q++ && *q++ == '?' && *q++ == '\0')
+		    while (*q != '\0') {
+			switch (*q) {
+			case '(':
+			    count++;
+			    break;
+			case ')':
+			    count--;
+			    break;
+			default:
+			    break;
+			}
+
+			if (count == 0)
+			    break;
+
+			q++;
+		    }
+
+		    if (*q++ == ')' && *q++ == '?' && *q++ == '\0')
 			return lab2;
 		}
 		

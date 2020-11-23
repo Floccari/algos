@@ -178,7 +178,7 @@ char *diagnosticate(struct automaton *dctor, struct list *observation) {
 		struct label *lab = NULL;
 
 		if (st->delta)
-		    label_create(st->delta, RELEVANCE);
+		    lab = label_create(st->delta, RELEVANCE);
 		
 		if (st->final) {
 		    if (initialized)
