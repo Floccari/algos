@@ -28,9 +28,13 @@ automaton networks and stuff
   e divisa in 3 fasi per maggiore leggibilità **(pseudocodice)**
 * Piccola revisione della fase due di Get_Diagnosis
 
-***VERSIONE 4***
+[***VERSIONE 4***](https://github.com/Floccari/algos/tree/08ccbe28d364b3f16f47c8ea074cd882752d0e7c)
 * Aggiunto il secondo algoritmo per le espressioni regolari, rifattorizzato assieme al primo
 * Aggiunto l'algoritmo per calcolare le chiusure silenziose (da decorare) **(pseudocodice)**
 * Aggiunto l'algoritmo per calcolare lo spazio delle chiusure (da decorare) **(pseudocodice)**
 * Aggiunto il comando dctor per calcolare il diagnosticatore **(pseudocodice)**
 * Modificato il linguaggio di input per permettere la corretta lettura del diagnosticatore
+
+***VERSIONE 5***
+* Aggiunto il comando dcdiag per calcolare la diagnosi usando il diagnosticatore **(pseudocodice)**
+* Piccole modifiche/correzioni
