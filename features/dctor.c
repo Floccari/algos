@@ -39,6 +39,7 @@ struct automaton *get_diagnosticator(struct automaton *bspace_aut) {
 	struct list *exp = get_split_diag(closure);
 
 	struct label *cl_regexp = NULL;
+	bool initialized = false;
 
 	/*** foreach expression ***/
 	while (exp) {
@@ -70,20 +71,134 @@ struct automaton *get_diagnosticator(struct automaton *bspace_aut) {
 		st->final = true;
 		
 		/*** build the appropriate label ***/
-		cl_regexp = label_alt_create(cl_regexp, tr->rel);
+		if (initialized) 
+		    cl_regexp = label_alt_create(cl_regexp, tr->rel);
+		else {
+		    cl_regexp = tr->rel;
+		    initialized = true;
+		}
 	    }
 
 	    exp = exp->next;
 	}
 
 	/*** assign cl_regexp to st ***/
-	st->value = cl_regexp;
+	if (cl_regexp)
+	    st->delta = cl_regexp->id;
 	
 	l = l->next;
     }
 
     return sspace_aut;
 }
+
+char *diagnosticate(struct automaton *dctor, struct list *observation) {
+    struct map_item **s_hashmap = hashmap_create();
+
+    struct state *initial = dctor->initial;
+    
+    /*** insert state ***/
+    hashmap_insert(s_hashmap,
+		   map_item_create(initial->id, STATE, initial));
+
+    struct list *l = get_last(observation);
+    
+    /*** foreach label in the observation ***/
+    while (l) {
+	struct label *lab = (struct label *) l->value;
+
+	struct map_item **new_hashmap = hashmap_create();
+	bool empty = true;
+	
+	/*** foreach state in s_hashmap ***/
+	for (int i = 0; i < HASH_TABLE_SIZE; i++) {
+	    if (s_hashmap[i]) {
+		struct map_item *item = s_hashmap[i];
+		
+		while (item) {
+		    struct state *st = (struct state *) item->value;
+		    struct list *lt = st->tr_out;
+
+		    /*** foreach outgoing transition ***/
+		    while (lt) {
+			struct transition *tr = (struct transition *) lt->value;
+
+			if (tr->obs->id == lab->id) {
+			    empty = false;
+			    
+			    struct label *new_lab = label_cat_create((struct label *) st->value, tr->rel);
+			    struct state *dest = tr->dest;
+
+			    /*** search in new_hashmap ***/
+			    struct map_item *s_item = hashmap_search(new_hashmap, dest->id, STATE);
+
+			    if (s_item) {
+				/*** update existing state ***/
+				struct state *s = (struct state *) item->value;
+
+				s->value = label_alt_create((struct label *) s->value, new_lab);
+			    } else {
+				dest->value = new_lab;
+				/*** insert state ***/
+				hashmap_insert(new_hashmap,
+					       map_item_create(dest->id, STATE, dest));
+			    }
+			}
+
+			lt = lt->next;
+		    }
+		    
+		    item = item->next;
+		}
+	    }	
+	}
+
+	/*** s_hashmap <- new_hashmap ***/
+	struct map_item **tmp = s_hashmap;
+	s_hashmap = new_hashmap;
+	
+	if (!empty)
+	    hashmap_empty(tmp, true);
+
+	free(tmp);
+
+	l = l->prev;
+    }
+
+    struct label *diagnosis = NULL;
+    bool initialized = false;
+
+    /*** foreach state in s_hashmap ***/
+    for (int i = 0; i < HASH_TABLE_SIZE; i++) {
+	if (s_hashmap[i]) {
+	    struct map_item *item = s_hashmap[i];
+	    
+	    while (item) {
+		struct state *st = item->value;
+
+		if (st->final) {
+		    if (initialized)
+			diagnosis = label_alt_create(diagnosis,
+						     label_cat_create((struct label *) st->value,
+								      label_create(st->delta, RELEVANCE)));
+		    else {
+			diagnosis = label_cat_create((struct label *) st->value,
+						     st->delta ? label_create(st->delta, RELEVANCE) : NULL);
+			initialized = true;
+		    }
+		}
+			
+		item = item->next;
+	    }
+	}
+    }
+
+    if (diagnosis)
+	return diagnosis->id;
+    else
+	return NULL;
+}
+
 
 struct automaton *get_silent_space(struct automaton *bspace_aut) {
     struct automaton *sspace_aut = automaton_create("sspace");

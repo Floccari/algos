@@ -28,10 +28,12 @@ int main(int argc, char **argv) {
 	printf("\thelp\tShow this help message\n");
 	printf("\ttest\tTest network loading and serialization\n");
 	printf("\tdot\tOutput dot representation of the network\n");
+	printf("\n");
 	printf("\tbspace\tCompute the behavioral space of the network\n");
 	printf("\tcomp\tCompute a behavioral subspace of the network given an observation\n");
 	printf("\tdiag\tOutput a diagnosis given a behavioral subspace\n");
 	printf("\tdctor\tBuild the diagnosticator of a network given its behavioral space\n");
+	printf("\tdcdiag\tOutput a diagnosis given a diagnosticator and an observation\n");
 	
 	exit(0);
     }
@@ -50,7 +52,7 @@ int main(int argc, char **argv) {
     /*** actions ***/
     if (strcmp(argv[1], "test") == 0) {
 
-	network_serialize(stdout, net, true);
+	network_serialize(stdout, net);
 	exit(0);
 	
     } else if (strcmp(argv[1], "dot") == 0) {
@@ -61,15 +63,17 @@ int main(int argc, char **argv) {
     } else if (strcmp(argv[1], "bspace") == 0) {
 
 	struct network *bs_net = bspace_compute(net);
+	bs_net->observation = net->observation;
 	network_print_subs(stdout, net, bs_net, false);
-	network_serialize(stdout, bs_net, false);
+	network_serialize(stdout, bs_net);
 	exit(0);
 	
     } else if (strcmp(argv[1], "comp") == 0) {
 
 	struct network *c_net = comp_compute(net);
+	c_net->observation = net->observation;
 	network_print_subs(stdout, net, c_net, true);
-	network_serialize(stdout, c_net, false);
+	network_serialize(stdout, c_net);
 	exit(0);
 	
     } else if (strcmp(argv[1], "diag") == 0) {
@@ -85,7 +89,15 @@ int main(int argc, char **argv) {
 	struct automaton *in = (struct automaton *) net->automatons->value;
 	dctor->automatons = head_insert(dctor->automatons,
 					list_create(get_diagnosticator(in)));
-	network_serialize(stdout, dctor, true);
+	dctor->observation = net->observation;
+	network_serialize(stdout, dctor);
+	exit(0);
+	
+    }  else if (strcmp(argv[1], "dcdiag") == 0) {
+
+	char *diagnosis = diagnosticate((struct automaton *) net->automatons->value,
+				       net->observation);
+	fprintf(stdout, "%s\n", diagnosis);
 	exit(0);
 	
     } else 

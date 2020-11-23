@@ -9,4 +9,6 @@
 
 struct automaton *get_diagnosticator(struct automaton *bspace_aut);
 
+char *diagnosticate(struct automaton *dctor, struct list *observation);
+
 #endif

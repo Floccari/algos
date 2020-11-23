@@ -194,10 +194,10 @@ st : ID {// aut initialized in rule "aut"
    ;
 
 regexp : '"' ID {// st initialized in rule "st"
-       	         st->value = label_create(lexval, RELEVANCE);}
+       	         st->delta = lexval;}
 	 '"'
        | '"' DIAG {// st initialized in rule "st"
-       	           st->value = label_create(lexval, RELEVANCE);}
+       	           st->delta = lexval;}
 	 '"'
        | {/* eps */}
        ;

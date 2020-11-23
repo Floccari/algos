@@ -197,7 +197,7 @@ struct network *network_create(char *id) {
     return net;
 }
 
-void network_serialize(FILE *fc, struct network *net, bool regexp) {
+void network_serialize(FILE *fc, struct network *net) {
     /*** network ***/
     fprintf(fc, "network %s:\n", net->id);
     fprintf(fc, "\tautomatons: ");
@@ -269,29 +269,27 @@ void network_serialize(FILE *fc, struct network *net, bool regexp) {
 
 	if (ls) {
 	    struct state *s = (struct state *) ls->value;
-	    struct label *lab = (struct label *) s->value;
 
 	    if (s->final)
 		fprintf(fc, "[%s]", s->id);
 	    else
 		fprintf(fc, "%s", s->id);
 
-	    if (regexp && lab && lab->id)
-		fprintf(fc, " \"%s\"", lab->id);
+	    if (s->delta)
+		fprintf(fc, " \"%s\"", s->delta);
 
 	    ls = ls->prev;
     
 	    while (ls) {
 		struct state *s = (struct state *) ls->value;
-		struct label *lab = (struct label *) s->value;
 		
 		if (s->final)
 		    fprintf(fc, ", [%s]", s->id);
 		else
 		    fprintf(fc, ", %s", s->id);		
 
-		if (regexp && lab && lab->id)
-		    fprintf(fc, " \"%s\"", lab->id);
+		if (s->delta)
+		    fprintf(fc, " \"%s\"", s->delta);
 		
 		ls = ls->prev;
 	    }
