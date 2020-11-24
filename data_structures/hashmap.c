@@ -55,15 +55,8 @@ int hash(char *id, int m) {
 void hashmap_insert(struct map_item **hashmap, struct map_item *item) {
     int key = hash(item->id, HASH_TABLE_SIZE);
 
-    if (hashmap[key]) {
-	struct map_item *last = hashmap[key];
-	
-	while (last->next)
-	    last = last->next;
-
-	last->next = item;
-    } else
-	hashmap[key] = item;
+    item->next = hashmap[key];
+    hashmap[key] = item;
 }
 
 struct map_item *hashmap_search(struct map_item **hashmap, char *id, enum types type) {
@@ -84,7 +77,7 @@ struct map_item *hashmap_search_with_sub(struct map_item **hashmap, char *id, en
     struct map_item *item = hashmap[key];
     
     while (item)
-	if (item->type == type && strcmp(item->id, id) == 0 && item->subvalue == sub)
+	if (item->type == type && item->subvalue == sub && strcmp(item->id, id) == 0)
 	    return item;
 	else
 	    item = item->next;

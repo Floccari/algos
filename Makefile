@@ -1,4 +1,4 @@
-CFLAGS := -g -Wall -Wextra
+CFLAGS := -O2 -g -Wall -Wextra
 
 default : program
 
