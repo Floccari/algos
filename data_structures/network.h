@@ -10,6 +10,12 @@ enum dfs_colors {
     BLACK
 };
 
+enum tr_lists {
+    TR,
+    TR_IN,
+    TR_OUT
+};
+
 struct state {
     char *id;
     enum dfs_colors color;
@@ -53,6 +59,7 @@ struct automaton {
     struct list *states;
     struct state *initial;
     struct list *transitions;
+    struct map_item **sttr_hashmap;
     /*struct list *lk_in;
       struct list *lk_out;*/
 };
@@ -87,6 +94,8 @@ struct network {
 };
 
 struct state *state_create(char *id);
+
+void state_attach(struct automaton *aut, struct state *st);
 
 void state_detach(struct automaton *aut, struct state *st);
 
@@ -126,11 +135,11 @@ void network_print_subs(FILE *fc, struct network *net, struct network *comp_net,
 
 void network_to_dot(FILE *fc, struct network *net);
 
-char *state_id_create(int index);
+char *state_id_create(long index);
 
-char *transition_id_create(int index);
+char *transition_id_create(long index);
 
-char *univ_tr_id_create(int index);
+char *univ_tr_id_create(long index);
 
 struct label *label_cat_create(struct label *lab1, struct label *lab2);
 

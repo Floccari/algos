@@ -171,8 +171,7 @@ st : ID {// aut initialized in rule "aut"
 	 hashmap_insert(hashmap,
 			map_item_create_with_sub(st->id, STATE, st, aut));
 	 
-	 struct list *l = list_create(st);
-	 aut->states = head_insert(aut->states, l);}
+	 state_attach(aut, st);}
 
      regexp
 	   
@@ -187,8 +186,7 @@ st : ID {// aut initialized in rule "aut"
 	     hashmap_insert(hashmap,
 			    map_item_create_with_sub(st->id, STATE, st, aut));
 	     
-	     struct list *l = list_create(st);
-	     aut->states = head_insert(aut->states, l);}
+	     state_attach(aut, st);}
 
      ']' regexp
    ;
@@ -223,12 +221,7 @@ tr : ID {item = hashmap_search(hashmap, lexval, TRANSITION);
 
 	   tr = transition_create(lexval);
 	   hashmap_insert(hashmap,
-			  map_item_create(tr->id, TRANSITION, tr));
-
-	   struct list *l = list_create(tr);
-
-	   // aut initialized in rule "aut"		 
-	   aut->transitions = head_insert(aut->transitions, l);}
+			  map_item_create(tr->id, TRANSITION, tr));}
 
      ID {// aut initialized in rule "aut"
      	 item = hashmap_search_with_sub(hashmap, lexval, STATE, aut);
@@ -239,10 +232,7 @@ tr : ID {item = hashmap_search(hashmap, lexval, TRANSITION);
 	 st = (struct state *) item->value;
 	 
 	 // tr initialized in $2
-	 tr->src = st;
-
-	 struct list *l = list_create(tr);
-	 st->tr_out = head_insert(st->tr_out, l);}
+	 tr->src = st;}
 
      ARROW ID {// aut initialized in rule "aut"
      	       item = hashmap_search_with_sub(hashmap, lexval, STATE, aut);
@@ -253,10 +243,9 @@ tr : ID {item = hashmap_search(hashmap, lexval, TRANSITION);
 	       st = (struct state *) item->value;
 
                // tr initialized in $2
-	       tr->dest = (struct state *) item->value;
+	       tr->dest = st;
 
-	       struct list *l = list_create(tr);
-	       st->tr_in = head_insert(st->tr_in, l);}
+	       transition_attach(aut, tr);}
      
      obs-decl rel-decl in-decl out-decl ';'
    ;

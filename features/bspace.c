@@ -1,7 +1,7 @@
 #include "bspace.h"
 
-int st_amount;
-int tr_amount;
+long st_amount;
+long tr_amount;
 bool comp_set;
 struct network *bs_net;
 struct map_item **ct_hashmap;
@@ -79,8 +79,7 @@ struct network *compute(struct network *net, bool comp) {
     if (comp && c->current_obs)
 	st->final = false;    // we still have labels left
     
-    bs_aut->states = head_insert(bs_aut->states,
-				 list_create(st));
+    state_attach(bs_aut, st);
     bs_aut->initial = st;
 
     /*** add context to hashmap ***/
@@ -206,8 +205,7 @@ void step(struct state *current_bs_state) {
 		    new_state->final = false;    // we still have labels left
 
 		/*** add new state to the automaton ***/
-		bs_aut->states = head_insert(bs_aut->states,
-					     list_create(new_state));
+		state_attach(bs_aut, new_state);
 
 		/*** set destination and attach transition ***/
 		new_tr->dest = new_state;

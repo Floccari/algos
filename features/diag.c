@@ -1,6 +1,6 @@
 #include "diag.h"
 
-int tr_amount;
+long tr_amount;
 struct state *init;
 struct state *fin;
 
@@ -39,9 +39,8 @@ void do_regexp(struct automaton *aut, bool split) {
 
     /*** add new initial state ***/
     init = state_create("_init");
-	
-    aut->states = head_insert(aut->states,
-			      list_create(init));
+
+    state_attach(aut, init);
 	
     struct transition *tr = transition_create(univ_tr_id_create(tr_amount++));    
 
@@ -55,8 +54,7 @@ void do_regexp(struct automaton *aut, bool split) {
     struct list *l = aut->states;
     fin = state_create("_fin");
 
-    aut->states = head_insert(aut->states,
-			      list_create(fin));
+    state_attach(aut, fin);
 
     while (l) {
 	struct state *st = (struct state *) l->value;
@@ -192,16 +190,16 @@ void phase_two(struct automaton *aut, bool split) {
 	
 	if (split && tr1->value) {
 	    struct state *st = (struct state *) tr1->value;
-	    lookup = calloc(strlen(tr1->src->id) + strlen(tr1->dest->id) + strlen(st->id) + 2,
+	    lookup = calloc(strlen(tr1->src->id) + strlen(tr1->dest->id) + strlen(st->id) + 3,
 				  sizeof (char));
 	} else
-	    lookup = calloc(strlen(tr1->src->id) + strlen(tr1->dest->id) + 3, sizeof (char));
+	    lookup = calloc(strlen(tr1->src->id) + strlen(tr1->dest->id) + 2, sizeof (char));
 	
 	strcpy(lookup, tr1->src->id);
 
 	char *p = lookup + strlen(tr1->src->id);
 	*p++ = '#';
-	*p++ = '\0';	
+	*p = '\0';	
 	
 	strcat(lookup, tr1->dest->id);
 
@@ -210,7 +208,7 @@ void phase_two(struct automaton *aut, bool split) {
 
 	    p += strlen(tr1->dest->id);
 	    *p++ = '#';
-	    *p++ = '\0';	
+	    *p = '\0';	
 	    
 	    strcat(lookup, st->id);
 	}

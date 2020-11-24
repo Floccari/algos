@@ -22,6 +22,6 @@ struct list *head_insert(struct list *l, struct list *item);
 
 struct list *item_remove(struct list *l, struct list *item);
 
-struct list *search_and_remove(struct list *l, void *value);
+//struct list *search_and_remove(struct list *l, void *value);
 
 #endif

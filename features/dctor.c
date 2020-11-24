@@ -2,7 +2,7 @@
 
 struct automaton *s_aut;
 struct list *visited;
-int tr_amount;
+long tr_amount;
 
 struct automaton *get_silent_space(struct automaton *bspace_aut);
 struct automaton *get_silent(struct state *st);
@@ -237,8 +237,7 @@ struct automaton *get_silent_space(struct automaton *bspace_aut) {
 	    /*** create a new state in the silent space ***/
 	    struct state *s_st = state_create(st->id);
 
-	    sspace_aut->states = head_insert(sspace_aut->states,
-					     list_create(s_st));
+	    state_attach(sspace_aut, s_st);
 
 	    if (initial)
 		sspace_aut->initial = s_st;
@@ -364,8 +363,7 @@ struct automaton *get_silent(struct state *st) {
     /*** create new silent state and insert it ***/
     struct state *s_st = state_create(st->id);
 
-    s_aut->states = head_insert(s_aut->states,
-				list_create(s_st));
+    state_attach(s_aut, s_st);
     s_aut->initial = s_st;
 
     /*** save pointer to silent state into current state ***/
@@ -413,9 +411,7 @@ void silent_visit(struct state *st) {
 		/*** create a new silent state and add it ***/
 		struct state *s_next = state_create(next->id);
 
-		s_aut->states = head_insert(s_aut->states,
-					     list_create(s_next));
-
+		state_attach(s_aut, s_next);
 		s_next->final = next->final;
 
 		/*** save pointer to silent state into next state ***/

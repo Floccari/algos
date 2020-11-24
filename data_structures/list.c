@@ -36,19 +36,19 @@ struct list *item_remove(struct list *l, struct list *item) {
 	return item->next;
 }
 
-struct list *search_and_remove(struct list *l, void *value) {
-    struct list *current = l;
+/* struct list *search_and_remove(struct list *l, void *value) { */
+/*     struct list *current = l; */
     
-    while (current) {
-	if (current->value == value) {
-	    struct list *to_return = item_remove(l, current);
-	    free(current);
-	    return to_return;    // exits here
-	}
+/*     while (current) { */
+/* 	if (current->value == value) { */
+/* 	    struct list *to_return = item_remove(l, current); */
+/* 	    free(current); */
+/* 	    return to_return;    // exits here */
+/* 	} */
 
-	current = current->next;
-    }
+/* 	current = current->next; */
+/*     } */
 
-    // in case it was not found
-    return l;
-}
+/*     // in case it was not found */
+/*     return l; */
+/* } */

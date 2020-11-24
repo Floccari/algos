@@ -9,17 +9,24 @@ struct state *state_create(char *id) {
     return st;
 }
 
+void state_attach(struct automaton *aut, struct state *st) {
+    struct list *l = list_create(st);
+
+    aut->states = head_insert(aut->states, l);
+    hashmap_insert(aut->sttr_hashmap,
+		   map_item_create(st->id, STATE, l));
+}
+
 void state_detach(struct automaton *aut, struct state *st) {
     struct list *ls = st->tr_in;
     
     /*** remove all incoming transitions ***/
     while (ls) {
 	struct transition *tr = (struct transition *) ls->value;
+	ls = ls->next;
 
 	transition_detach(aut, tr);
 	transition_destroy(tr);
-
-	ls = ls->next;
     }
 
     ls = st->tr_out;
@@ -27,15 +34,16 @@ void state_detach(struct automaton *aut, struct state *st) {
     /*** remove all outgoing transitions ***/
     while (ls) {
 	struct transition *tr = (struct transition *) ls->value;
-
+	ls = ls->next;
+	
 	transition_detach(aut, tr);
 	transition_destroy(tr);
-
-	ls = ls->next;
     }
 
     /*** remove state from the automaton ***/
-    aut->states = search_and_remove(aut->states, st);
+    struct list *list_item = (struct list *) hashmap_search(aut->sttr_hashmap, st->id, STATE)->value;
+    aut->states = item_remove(aut->states, list_item);
+    free(list_item);
 }
 
 struct action *action_create() {
@@ -63,7 +71,7 @@ struct transition *transition_create(char *id) {
 }
 
 void transition_destroy(struct transition *tr) {
-    free(tr->id);
+//    free(tr->id);
     free(tr->act_in);
 
     while (tr->act_out) {
@@ -75,38 +83,54 @@ void transition_destroy(struct transition *tr) {
 }
 
 void transition_attach(struct automaton *aut, struct transition *tr) {
+    struct list *l = list_create(tr);
     struct state *st = tr->src;
 
-    st->tr_out = head_insert(st->tr_out,
-			     list_create(tr));
+    st->tr_out = head_insert(st->tr_out, l);
+    hashmap_insert(aut->sttr_hashmap,
+		   map_item_create_with_sub(tr->id, TRANSITION, l, (void *) TR_OUT));    
 
+    l = list_create(tr);
     st = tr->dest;
 
-    st->tr_in = head_insert(st->tr_in,
-			    list_create(tr));
+    st->tr_in = head_insert(st->tr_in, l);
+    hashmap_insert(aut->sttr_hashmap,
+		   map_item_create_with_sub(tr->id, TRANSITION, l, (void *) TR_IN));    
 
     /*** add to the automaton ***/
-    aut->transitions = head_insert(aut->transitions,
-				   list_create(tr));
+    l = list_create(tr);
+    aut->transitions = head_insert(aut->transitions, l);
+    hashmap_insert(aut->sttr_hashmap,
+		   map_item_create_with_sub(tr->id, TRANSITION, l, (void *) TR));
 }
 
 void transition_detach(struct automaton *aut, struct transition *tr) {
+    struct list *l = (struct list *) hashmap_search_with_sub(aut->sttr_hashmap, tr->id,
+								     TRANSITION, (void *) TR_OUT)->value;
     struct state *st = tr->src;
 
-    st->tr_out = search_and_remove(st->tr_out, tr);
+    st->tr_out = item_remove(st->tr_out, l);
+    free(l);
 
+    l = (struct list *) hashmap_search_with_sub(aut->sttr_hashmap, tr->id,
+								     TRANSITION, (void *) TR_IN)->value;
     st = tr->dest;
 
-    st->tr_in = search_and_remove(st->tr_in, tr);
+    st->tr_in = item_remove(st->tr_in, l);
+    free(l);    
 
     /*** remove from the automaton ***/
-    aut->transitions = search_and_remove(aut->transitions, tr);
+    l = (struct list *) hashmap_search_with_sub(aut->sttr_hashmap, tr->id,
+								     TRANSITION, (void *) TR)->value;
+    aut->transitions = item_remove(aut->transitions, l);
+    free(l);
 }
 
 struct automaton *automaton_create(char *id) {
     struct automaton *aut = malloc(sizeof (struct automaton));
     memset(aut, 0, sizeof (struct automaton));
     aut->id = id;
+    aut->sttr_hashmap = hashmap_create();
 
     return aut;
 }
@@ -511,24 +535,24 @@ void network_to_dot(FILE *fc, struct network *net) {
 }
 
 
-char *state_id_create(int index) {
-    char *id = calloc(6, sizeof (char));    // should use log(index) instead
-    sprintf(id, "%d", index);
+char *state_id_create(long index) {
+    char *id = calloc(10, sizeof (char));    // should use log(index) instead
+    sprintf(id, "%ld", index);
 
     return id;
 }
 
-char *transition_id_create(int index) {
-    char *id = calloc(7, sizeof (char));    // should use log(index) instead
-    sprintf(id, "t%d", index);
+char *transition_id_create(long index) {
+    char *id = calloc(11, sizeof (char));    // should use log(index) instead
+    sprintf(id, "t%ld", index);
 
     return id;
 }
 
 // internal, unique, not serializable
-char *univ_tr_id_create(int index) {
-    char *id = calloc(8, sizeof (char));    // should use log(index) instead
-    sprintf(id, "_t%d", index);
+char *univ_tr_id_create(long index) {
+    char *id = calloc(12, sizeof (char));    // should use log(index) instead
+    sprintf(id, "_t%ld", index);
 
     return id;
 }
@@ -559,6 +583,19 @@ struct label *label_cat_create(struct label *lab1, struct label *lab2) {
 }
 
 struct label *label_alt_create(struct label *lab1, struct label *lab2) {
+    /*** reduction ***/
+    if (lab1 && lab2) {
+	int cmp = strcmp(lab1->id, lab2->id);
+			 
+	if (cmp == 0)
+	    return lab1;
+	else if (cmp > 0) {
+	    struct label *tmp = lab1;
+	    lab1 = lab2;
+	    lab2 = tmp;
+	}
+    }
+
     int l1 = (lab1) ? strlen(lab1->id) : 0;
     int l2 = (lab2) ? strlen(lab2->id) : 0;
 
@@ -566,9 +603,6 @@ struct label *label_alt_create(struct label *lab1, struct label *lab2) {
 
     /*** reduction ***/
     if (lab1 && lab2) {
-	if (strcmp(lab1->id, lab2->id) == 0)
-	    return lab1;
-
 	bool equal = true;
 
 	for (int i = 0; i < l1 && i < l2; i++)
@@ -582,7 +616,7 @@ struct label *label_alt_create(struct label *lab1, struct label *lab2) {
 		return lab2;
 	    else if (l2 < l1 && lab1->id[l2] == '|')
 		return lab1;
-	}	
+	}
 
 	equal = true;
 	
