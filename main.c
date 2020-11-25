@@ -6,14 +6,30 @@
 #include "features/diag.h"
 #include "features/dctor.h"
 
+#include <signal.h>
+
 extern struct network *net;
 extern struct map_item **hashmap;
 extern void yyparse();
 extern void yyset_in(FILE *in);
 
 
+sig_atomic_t stop= 0;
+
+void handler(int signal_number) {
+    stop = 1;
+}
+
+
 int main(int argc, char **argv) {
     FILE *fc;
+
+    /*** signal handler ***/
+    struct sigaction sa;
+    memset(&sa, 0, sizeof (struct sigaction));
+    
+    sa.sa_handler = &handler;
+    sigaction(SIGINT, &sa, NULL);
 
     /*** help message ***/
     if (argc < 2 || argc > 3 ||
@@ -64,6 +80,13 @@ int main(int argc, char **argv) {
 
 	struct network *bs_net = bspace_compute(net);
 	bs_net->observation = net->observation;
+
+	if (stop) {
+	    fprintf(stdout, "# Received termination signal during execution\n");
+	    fprintf(stdout, "# Showing partial results\n");
+	    fprintf(stdout, "\n");
+	}
+	
 	network_print_subs(stdout, net, bs_net, false);
 	network_serialize(stdout, bs_net);
 	exit(0);
@@ -72,6 +95,13 @@ int main(int argc, char **argv) {
 
 	struct network *c_net = comp_compute(net);
 	c_net->observation = net->observation;
+
+	if (stop) {
+	    fprintf(stdout, "# Received termination signal during execution\n");
+	    fprintf(stdout, "# Showing partial results\n");
+	    fprintf(stdout, "\n");
+	}
+	
 	network_print_subs(stdout, net, c_net, true);
 	network_serialize(stdout, c_net);
 	exit(0);
@@ -90,6 +120,13 @@ int main(int argc, char **argv) {
 	dctor->automatons = head_insert(dctor->automatons,
 					list_create(get_diagnosticator(in)));
 	dctor->observation = net->observation;
+
+	if (stop) {
+	    fprintf(stdout, "# Received termination signal during execution\n");
+	    fprintf(stdout, "# Showing partial results\n");
+	    fprintf(stdout, "\n");
+	}
+
 	network_serialize(stdout, dctor);
 	exit(0);
 	

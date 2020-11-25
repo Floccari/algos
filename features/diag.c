@@ -1,5 +1,9 @@
 #include "diag.h"
 
+#include <signal.h>
+
+extern sig_atomic_t stop;
+
 long tr_amount;
 struct state *init;
 struct state *fin;
@@ -15,6 +19,12 @@ void phase_three(struct automaton *aut, bool split);
 
 char *get_diagnosis(struct automaton *aut) {
     do_regexp(aut, false);
+
+    if (stop) {
+	fprintf(stderr, "# Received termination signal during execution\n");
+	fprintf(stderr, "# No partial results available\n");
+	exit(-1);    // exits here
+    }
 
     if (aut->transitions) {
 	struct transition *tr = (struct transition *) aut->transitions->value;
@@ -76,11 +86,17 @@ void do_regexp(struct automaton *aut, bool split) {
     while ((!split && aut->transitions->next) ||
 	   (split && (aut->states->next->next || multiple_tr(aut)))) {
 
-	phase_one(aut, split);    // 16-17, split: 12-19
-	
-	phase_two(aut, split);    // 18-19, split: 20-23
-	
-	phase_three(aut, split);    // 21-31, split: 25-48
+	if (!stop)
+	    phase_one(aut, split);    // 16-17, split: 12-19
+
+	if (!stop)
+	    phase_two(aut, split);    // 18-19, split: 20-23
+
+	if (!stop)
+	    phase_three(aut, split);    // 21-31, split: 25-48
+
+	if (stop)
+	    break;
 
 	/*** prevent segfaults if the input network is wrong ***/
 	if (!aut->transitions)

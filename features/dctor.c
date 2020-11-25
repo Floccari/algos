@@ -1,5 +1,9 @@
 #include "dctor.h"
 
+#include <signal.h>
+
+extern sig_atomic_t stop;
+
 struct automaton *s_aut;
 struct list *visited;
 long tr_amount;
@@ -37,54 +41,59 @@ struct automaton *get_diagnosticator(struct automaton *bspace_aut) {
 
 	/*** compute the split regexp ***/
 	struct list *exp = get_split_diag(closure);
-
-	struct label *cl_regexp = NULL;
-	bool initialized = false;
-
-	/*** foreach expression ***/
-	while (exp) {
-	    struct transition *tr = (struct transition *) exp->value;
-
-	    struct list *lt = st->tr_out;
-	    
-	    /*** foreach outgoing transition ***/
-	    while (lt) {
-		struct transition *ts = (struct transition *) lt->value;
-
-		/*** if this transition was generated from this exit state ***/
-		if (ts->value == tr->value) {
-
-		    /*** concatenate regexp with ts->rel ***/
-		    ts->rel = label_cat_create(tr->rel, ts->rel);
-		}
-
-		lt = lt->next;
-	    }
-	    
-	    struct state *bs = (struct state *) tr->value;
 	
-	    /*** if this state is final (not exit) ***/
-	    /*** we know because bs is a bspace state (unaltered) ***/
-	    if (bs->final) {
+	if (!stop) {
+	    struct label *cl_regexp = NULL;
+	    bool initialized = false;
 
-		/*** set sspace state (closure) as final ***/
-		st->final = true;
-		
-		/*** build the appropriate label ***/
-		if (initialized) 
-		    cl_regexp = label_alt_create(cl_regexp, tr->rel);
-		else {
-		    cl_regexp = tr->rel;
-		    initialized = true;
+	    /*** foreach expression ***/
+	    while (exp) {
+		struct transition *tr = (struct transition *) exp->value;
+
+		struct list *lt = st->tr_out;
+	    
+		/*** foreach outgoing transition ***/
+		while (lt) {
+		    struct transition *ts = (struct transition *) lt->value;
+
+		    /*** if this transition was generated from this exit state ***/
+		    if (ts->value == tr->value) {
+
+			/*** concatenate regexp with ts->rel ***/
+			ts->rel = label_cat_create(tr->rel, ts->rel);
+		    }
+
+		    lt = lt->next;
 		}
+	    
+		struct state *bs = (struct state *) tr->value;
+	
+		/*** if this state is final (not exit) ***/
+		/*** we know because bs is a bspace state (unaltered) ***/
+		if (bs->final) {
+
+		    /*** set sspace state (closure) as final ***/
+		    st->final = true;
+		
+		    /*** build the appropriate label ***/
+		    if (initialized) 
+			cl_regexp = label_alt_create(cl_regexp, tr->rel);
+		    else {
+			cl_regexp = tr->rel;
+			initialized = true;
+		    }
+		}
+
+		exp = exp->next;
 	    }
 
-	    exp = exp->next;
+	    /*** assign cl_regexp to st ***/
+	    if (cl_regexp)
+		st->delta = cl_regexp->id;
 	}
 
-	/*** assign cl_regexp to st ***/
-	if (cl_regexp)
-	    st->delta = cl_regexp->id;
+	if (stop)
+	    break;
 	
 	l = l->next;
     }
@@ -161,6 +170,12 @@ char *diagnosticate(struct automaton *dctor, struct list *observation) {
 	    hashmap_empty(tmp, false);
 
 	free(tmp);
+
+	if (stop) {
+	    fprintf(stderr, "# Received termination signal during execution\n");
+	    fprintf(stderr, "# No partial results available\n");
+	    exit(-1);    // exits here
+	}
 
 	l = l->prev;
     }

@@ -1,5 +1,9 @@
 #include "bspace.h"
 
+#include <signal.h>
+
+extern sig_atomic_t stop;
+
 long st_amount;
 long tr_amount;
 bool comp_set;
@@ -86,11 +90,14 @@ struct network *compute(struct network *net, bool comp) {
     hashmap_insert(ct_hashmap, map_item_create_with_sub(c->id, CONTEXT, c, st));
 
     /*** recursive step ***/
-    comp_set = comp;
-    step(st);
+    if (!stop) {
+	comp_set = comp;
+	step(st);
+    }
 
     /*** pruning ***/
-    prune(bs_net);
+    if (!stop)
+	prune(bs_net);
 
     /*** cleanup (does not delete contexts) ***/
     hashmap_empty(ct_hashmap, false);
@@ -216,7 +223,8 @@ void step(struct state *current_bs_state) {
 								    CONTEXT, new_context, new_state));
 
 		/*** explore the new state completely ***/
-		step(new_state);
+		if (!stop)
+		    step(new_state);
 	    }
 
 	NEXT_TRANSITION:

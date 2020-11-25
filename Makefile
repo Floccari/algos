@@ -1,4 +1,11 @@
-CFLAGS := -O2 -g -Wall -Wextra
+# gdb, memcheck
+#CFLAGS := -O0 -g -Wall -Wextra
+
+# cachegrind, callgrind
+#CFLAGS := -O2 -g -Wall -Wextra
+
+# default
+CFLAGS := -O2
 
 default : program
 
