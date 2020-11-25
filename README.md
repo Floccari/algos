@@ -42,7 +42,7 @@ Actions:
 ```bash
 ./program dcdiag diagnosticatore
 ```
-* Produrre un file .pdf che rappresenta una rete/spazio comportamentale/diagnosticatore **(richiede un compilatore dot e.g. graphviz)**
+* Produrre un file .pdf che rappresenta una rete / spazio comportamentale / diagnosticatore **(richiede un compilatore dot e.g. graphviz)**
 ```bash
 ./program dot reti_test/rete_test | dot -Tpdf -o rete.pdf
 ```
