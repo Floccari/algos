@@ -38,3 +38,4 @@ automaton networks and stuff
 ***VERSIONE 5***
 * Aggiunto il comando dcdiag per calcolare la diagnosi usando il diagnosticatore **(pseudocodice)**
 * Piccole modifiche/correzioni
+* Possibilità di interrompere l'esecuzione (Ctrl + C) mostrando risultati parziali (se disponibili)
