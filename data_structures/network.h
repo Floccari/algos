@@ -103,6 +103,10 @@ struct action *action_create();
 
 struct label *label_create(char *id, enum label_types type);
 
+struct label *label_copy(struct label *lab);
+
+void label_destroy(struct label *lab);
+
 struct transition *transition_create(char *id);
 
 void transition_destroy(struct transition *tr);

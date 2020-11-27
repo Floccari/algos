@@ -69,7 +69,7 @@ struct map_item *hashmap_search(struct map_item **hashmap, char *id, enum types 
 	else
 	    item = item->next;
 
-    return item;
+    return NULL;
 }
 
 struct map_item *hashmap_search_with_sub(struct map_item **hashmap, char *id, enum types type, void *sub) {
@@ -82,7 +82,50 @@ struct map_item *hashmap_search_with_sub(struct map_item **hashmap, char *id, en
 	else
 	    item = item->next;
 
-    return item;
+    return NULL;
 }
 
+struct map_item *hashmap_search_and_remove(struct map_item **hashmap, char *id, enum types type) {
+    int key = hash(id, HASH_TABLE_SIZE);
+    struct map_item *item = hashmap[key];
 
+    if (item && item->type == type && strcmp(item->id, id) == 0) {
+	hashmap[key] = item->next;
+	return item;
+    }
+    
+    while (item->next) {
+	struct map_item *next = item->next;
+	
+	if (next->type == type && strcmp(next->id, id) == 0) {
+	    item->next = next->next;
+	    return next;
+	} else
+	    item = next;
+    }
+
+    return NULL;
+}
+
+struct map_item *hashmap_search_with_sub_and_remove(struct map_item **hashmap, char *id, enum types type, void *sub) {
+    int key = hash(id, HASH_TABLE_SIZE);
+    struct map_item *item = hashmap[key];
+
+    if (item && item->type == type && item->subvalue == sub && strcmp(item->id, id) == 0) {
+	hashmap[key] = item->next;
+	return item;
+    }
+    
+    while (item->next) {
+	struct map_item *next = item->next;
+
+	if (next->type == type && next->subvalue == sub && strcmp(next->id, id) == 0) {
+	    item->next = next->next;
+	    return next;
+	}
+	else
+	    item = next;
+    }
+
+    return NULL;
+}

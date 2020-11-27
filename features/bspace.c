@@ -160,8 +160,7 @@ void step(struct state *current_bs_state) {
 			lab = (struct label *) new_context->current_obs->value;
 		    
 		    if (tr->obs) {
-			if (!lab ||
-			    lab->id != tr->obs->id) {
+			if (!lab || strcmp(lab->id, tr->obs->id) != 0) {
 			    /*** skip transition ***/
 			    context_destroy(new_context);
 			    goto NEXT_TRANSITION;
@@ -175,8 +174,8 @@ void step(struct state *current_bs_state) {
 		/*** create the new transition and set source ***/
 		struct transition *new_tr = transition_create(transition_id_create(tr_amount++));
 		new_tr->src = current_bs_state;
-		new_tr->obs = tr->obs;
-		new_tr->rel = tr->rel;
+		new_tr->obs = label_copy(tr->obs);
+		new_tr->rel = label_copy(tr->rel);
 
 		/*** check if we already visited this context ***/
 		struct map_item *item = context_search(ct_hashmap, new_context);
@@ -262,7 +261,8 @@ void prune(struct network *net) {
 	    l = l->next;
 
 	    state_detach(aut, st);
-	    free(st->value);
+	    context_destroy(st->value);
+	    free(st->id);
 	    free(st);
 	} else
 	    l = l->next;

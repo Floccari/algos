@@ -145,6 +145,10 @@ bool multiple_tr(struct automaton *aut) {
 	l = l->next;
     }
 
+    /*** cleanup ***/
+    hashmap_empty(sub_hashmap, false);
+    free(sub_hashmap);    
+
     return false;
 }
 
@@ -242,10 +246,16 @@ void phase_two(struct automaton *aut, bool split) {
 		struct transition *tr2 = (struct transition *) item->value;
 
 		/*** build the appropriate label and assign it to tr2 ***/
-		tr2->rel = label_alt_create(tr1->rel, tr2->rel);
+		struct label *lab = label_alt_create(tr1->rel, tr2->rel);
+
+		if (tr2->rel)
+		    label_destroy(tr2->rel);
+		
+		tr2->rel = lab;
 		
 		/*** remove tr1 ***/
 		transition_detach(aut, tr1);
+		transition_destroy(tr1);
 	} else {
 	    hashmap_insert(tr_hashmap,
 			   map_item_create(lookup, TRANSITION, tr1));
@@ -278,10 +288,11 @@ void phase_three(struct automaton *aut, bool split) {
 
 		if (tr->src == tr->dest) {
 		    if (tr->rel)
-			autotr = tr->rel;
+			autotr = label_copy(tr->rel);
 
 		    /*** remove the transition and break ***/
 		    transition_detach(aut, tr);
+		    transition_destroy(tr);
 		    break;
 
 		} else
@@ -329,6 +340,7 @@ void phase_three(struct automaton *aut, bool split) {
 	    l = l->next;
 
 	    state_detach(aut, st);
+	    free(st);
 	} else
 	    l = l->next;
     }

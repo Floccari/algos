@@ -76,10 +76,15 @@ struct automaton *get_diagnosticator(struct automaton *bspace_aut) {
 		    st->final = true;
 		
 		    /*** build the appropriate label ***/
-		    if (initialized) 
-			cl_regexp = label_alt_create(cl_regexp, tr->rel);
-		    else {
-			cl_regexp = tr->rel;
+		    if (initialized) {
+			struct label *lab = label_alt_create(cl_regexp, tr->rel);
+
+			if (cl_regexp && cl_regexp != lab)
+			    label_destroy(cl_regexp);
+
+			cl_regexp = lab;
+		    } else {
+			cl_regexp = label_copy(tr->rel);
 			initialized = true;
 		    }
 		}
@@ -132,7 +137,7 @@ char *diagnosticate(struct automaton *dctor, struct list *observation) {
 		    while (lt) {
 			struct transition *tr = (struct transition *) lt->value;
 
-			if (tr->obs->id == lab->id) {
+			if (strcmp(tr->obs->id, lab->id) == 0) {
 			    empty = false;
 			    
 			    struct label *new_lab = label_cat_create((struct label *) st->value, tr->rel);
@@ -196,10 +201,15 @@ char *diagnosticate(struct automaton *dctor, struct list *observation) {
 		    lab = label_create(st->delta, RELEVANCE);
 		
 		if (st->final) {
-		    if (initialized)
-			diagnosis = label_alt_create(diagnosis,
-						     label_cat_create((struct label *) st->value, lab));
-		    else {
+		    if (initialized) {
+			struct label *l = label_alt_create(diagnosis,
+							   label_cat_create((struct label *) st->value, lab));
+			
+			if (diagnosis)
+			    label_destroy(diagnosis);
+
+			diagnosis = l;
+		    } else {
 			diagnosis = label_cat_create((struct label *) st->value, lab);
 			initialized = true;
 		    }
@@ -209,6 +219,10 @@ char *diagnosticate(struct automaton *dctor, struct list *observation) {
 	    }
 	}
     }
+
+    /*** cleanup ***/
+    hashmap_empty(s_hashmap, false);
+    free(s_hashmap);
 
     if (diagnosis)
 	return diagnosis->id;
@@ -346,8 +360,8 @@ struct automaton *get_silent_space(struct automaton *bspace_aut) {
 		    s_tr->src = src;
 		    s_tr->dest = dest;
 		    
-		    s_tr->obs = tr->obs;
-		    s_tr->rel = tr->rel;
+		    s_tr->obs = label_copy(tr->obs);
+		    s_tr->rel = label_copy(tr->rel);
 		    s_tr->value = tr->src;
 		    
 		    transition_attach(sspace_aut, s_tr);
@@ -439,7 +453,7 @@ void silent_visit(struct state *st) {
 		struct transition *s_tr = transition_create(transition_id_create(tr_amount++));
 		s_tr->src = (struct state *) st->value;
 		s_tr->dest = (struct state *) next->value;
-		s_tr->rel = tr->rel;
+		s_tr->rel = label_copy(tr->rel);
 
 		transition_attach(s_aut, s_tr);
 		
@@ -452,7 +466,7 @@ void silent_visit(struct state *st) {
 		struct transition *s_tr = transition_create(transition_id_create(tr_amount++));
 		s_tr->src = (struct state *) st->value;
 		s_tr->dest = (struct state *) next->value;
-		s_tr->rel = tr->rel;
+		s_tr->rel = label_copy(tr->rel);
 
 		transition_attach(s_aut, s_tr);
 	    }

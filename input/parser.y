@@ -251,17 +251,15 @@ tr : ID {item = hashmap_search(hashmap, lexval, TRANSITION);
    ;
 
 obs-decl : OBS '"' ID {item = hashmap_search(hashmap, lexval, LABEL);
-
+	               lab = label_create(lexval, OBSERVABILITY);
+		       
 	               if (item) {
-			   lab = (struct label *) item->value;
-
-			   if (lab->type != OBSERVABILITY)
+			   if (item->value != (void *) OBSERVABILITY)
 			       laberror();    // exits here
-		       } else
-			   lab = label_create(lexval, OBSERVABILITY);
-
-		       hashmap_insert(hashmap,
-				      map_item_create(lab->id, LABEL, lab));
+		       } else {
+			   hashmap_insert(hashmap,
+					  map_item_create(lab->id, LABEL, (void *) OBSERVABILITY));
+		       }
 
 	       	       // tr initialized in rule "tr"
 	       	       tr->obs = lab;}
@@ -270,33 +268,29 @@ obs-decl : OBS '"' ID {item = hashmap_search(hashmap, lexval, LABEL);
 	 ;
 
 rel-decl : REL '"' ID {item = hashmap_search(hashmap, lexval, LABEL);
-
+	               lab = label_create(lexval, RELEVANCE);
+					   
 	               if (item) {
-			   lab = (struct label *) item->value;
-
-			   if (lab->type != RELEVANCE)
+			   if (item->value != (void *) RELEVANCE)
 			       laberror();    // exits here
-		       } else
-			   lab = label_create(lexval, RELEVANCE);
-
-	               hashmap_insert(hashmap,
-				      map_item_create(lab->id, LABEL, lab));
+		       } else {
+			   hashmap_insert(hashmap,
+					  map_item_create(lab->id, LABEL, (void *) RELEVANCE));
+		       }
 
 	       	       // tr initialized in rule "tr"
 	       	       tr->rel = lab;}
 	   '"'
 	 | REL '"' DIAG {item = hashmap_search(hashmap, lexval, LABEL);
-
-	               	 if (item) {
-			     lab = (struct label *) item->value;
-			     
-			     if (lab->type != RELEVANCE)
-				 laberror();    // exits here
-			 } else
-			     lab = label_create(lexval, RELEVANCE);
+	       lab = label_create(lexval, RELEVANCE);
 			 
-			 hashmap_insert(hashmap,
-					map_item_create(lab->id, LABEL, lab));
+	               	 if (item) {
+			     if (item->value != (void *) RELEVANCE)
+				 laberror();    // exits here
+			 } else {
+			     hashmap_insert(hashmap,
+					    map_item_create(lab->id, LABEL, (void *) RELEVANCE));
+			 }
 			 
 			 // tr initialized in rule "tr"
 			 tr->rel = lab;}
@@ -390,13 +384,11 @@ obs-label : ID {item = hashmap_search(hashmap, lexval, LABEL);
       	        if (!item)
 		    nferror();    // exits here
 
-		lab = (struct label *) item->value;
-		
-		if (lab->type != OBSERVABILITY)
+		if (item->value != (void *) OBSERVABILITY)
 		    laberror();    // exits here
 
-		struct list *l = list_create(lab);
-		net->observation = head_insert(net->observation, l);}
+		net->observation = head_insert(net->observation,
+					       list_create(label_create(lexval, OBSERVABILITY)));}
 	  ;
 
 %%

@@ -41,9 +41,12 @@ void state_detach(struct automaton *aut, struct state *st) {
     }
 
     /*** remove state from the automaton ***/
-    struct list *list_item = (struct list *) hashmap_search(aut->sttr_hashmap, st->id, STATE)->value;
+    struct map_item *item = hashmap_search_and_remove(aut->sttr_hashmap, st->id, STATE);
+    struct list *list_item = (struct list *) item->value;
+    
     aut->states = item_remove(aut->states, list_item);
     free(list_item);
+    free(item);
 }
 
 struct action *action_create() {
@@ -62,6 +65,23 @@ struct label *label_create(char *id, enum label_types type) {
     return l;
 }
 
+struct label *label_copy(struct label *lab) {
+    if (!lab)
+	return NULL;
+    
+    struct label *new = label_create(NULL, lab->type);
+    new->id = malloc(strlen(lab->id) + 1);
+    strcpy(new->id, lab->id);
+    new->type = lab->type;
+
+    return new;
+}
+
+void label_destroy(struct label *lab) {
+    free(lab->id);
+    free(lab);
+}
+
 struct transition *transition_create(char *id) {
     struct transition *tr = malloc(sizeof (struct transition));
     memset(tr, 0, sizeof (struct transition));
@@ -71,13 +91,19 @@ struct transition *transition_create(char *id) {
 }
 
 void transition_destroy(struct transition *tr) {
-//    free(tr->id);
+    free(tr->id);
     free(tr->act_in);
 
     while (tr->act_out) {
 	free(tr->act_out->value);
 	tr->act_out = item_remove(tr->act_out, tr->act_out);
     }
+
+    if (tr->obs)
+	label_destroy(tr->obs);
+
+    if (tr->rel)
+	label_destroy(tr->rel);
 
     free(tr);
 }
@@ -105,25 +131,32 @@ void transition_attach(struct automaton *aut, struct transition *tr) {
 }
 
 void transition_detach(struct automaton *aut, struct transition *tr) {
-    struct list *l = (struct list *) hashmap_search_with_sub(aut->sttr_hashmap, tr->id,
-								     TRANSITION, (void *) TR_OUT)->value;
+    struct map_item *item = hashmap_search_with_sub_and_remove(aut->sttr_hashmap, tr->id,
+								TRANSITION, (void *) TR_OUT);
+    struct list *l = (struct list *) item->value;
     struct state *st = tr->src;
 
     st->tr_out = item_remove(st->tr_out, l);
     free(l);
+    free(item);
 
-    l = (struct list *) hashmap_search_with_sub(aut->sttr_hashmap, tr->id,
-								     TRANSITION, (void *) TR_IN)->value;
+    item = hashmap_search_with_sub_and_remove(aut->sttr_hashmap, tr->id,
+					       TRANSITION, (void *) TR_IN);
+    l = (struct list *) item->value;
     st = tr->dest;
 
     st->tr_in = item_remove(st->tr_in, l);
-    free(l);    
+    free(l);
+    free(item);
 
     /*** remove from the automaton ***/
-    l = (struct list *) hashmap_search_with_sub(aut->sttr_hashmap, tr->id,
-								     TRANSITION, (void *) TR)->value;
+    item = hashmap_search_with_sub_and_remove(aut->sttr_hashmap, tr->id,
+					      TRANSITION, (void *) TR);
+    l = (struct list *) item->value;
+    
     aut->transitions = item_remove(aut->transitions, l);
     free(l);
+    free(item);
 }
 
 struct automaton *automaton_create(char *id) {
@@ -157,6 +190,9 @@ struct context *context_create(int aut_amount, int lk_amount) {
 }
 
 struct context *context_copy(struct context *c) {
+    if (!c)
+	return NULL;
+    
     struct context *copy = context_create(c->aut_amount, c->lk_amount);
     memcpy(copy->states, c->states, sizeof (struct state *) * c->aut_amount);
     memcpy(copy->buffers, c->buffers, sizeof (char *) * c->lk_amount);
@@ -588,7 +624,7 @@ struct label *label_alt_create(struct label *lab1, struct label *lab2) {
 	int cmp = strcmp(lab1->id, lab2->id);
 			 
 	if (cmp == 0)
-	    return lab1;
+	    return label_copy(lab1);
 	else if (cmp > 0) {
 	    struct label *tmp = lab1;
 	    lab1 = lab2;
@@ -613,9 +649,9 @@ struct label *label_alt_create(struct label *lab1, struct label *lab2) {
 
 	if (equal) {
 	    if (l1 < l2 && lab2->id[l1] == '|')
-		return lab2;
+		return label_copy(lab2);
 	    else if (l2 < l1 && lab1->id[l2] == '|')
-		return lab1;
+		return label_copy(lab1);
 	}
 
 	equal = true;
@@ -628,9 +664,67 @@ struct label *label_alt_create(struct label *lab1, struct label *lab2) {
 
 	if (equal) {
 	    if (l1 < l2 && lab2->id[l2 - l1 - 1] == '|')
-		return lab2;
+		return label_copy(lab2);
 	    else if (l2 < l1 && lab1->id[l1 - l2 - 1] == '|')
-		return lab1;
+		return label_copy(lab1);
+	}
+    }
+
+    /*** reduction ***/
+    if (lab1 && !lab2) {
+	if (lab1->id[0] == '(') {
+	    int count = 1;
+	    char *q = &lab1->id[1];
+
+	    while (*q != '\0') {
+		switch (*q) {
+		case '(':
+		    count++;
+		    break;
+		case ')':
+		    count--;
+		    break;
+		default:
+		    break;
+		}
+
+		if (count == 0)
+		    break;
+
+		q++;
+	    }
+
+	    if (*q++ == ')' && *q++ == '?' && *q++ == '\0')
+		return label_copy(lab1);
+	}
+    }
+
+    /*** reduction ***/
+    if (lab2 && !lab1) {
+	if (lab2->id[0] == '(') {
+	    int count = 1;
+	    char *q = &lab2->id[1];
+
+	    while (*q != '\0') {
+		switch (*q) {
+		case '(':
+		    count++;
+		    break;
+		case ')':
+		    count--;
+		    break;
+		default:
+		    break;
+		}
+
+		if (count == 0)
+		    break;
+
+		q++;
+	    }
+
+	    if (*q++ == ')' && *q++ == '?' && *q++ == '\0')
+		return label_copy(lab2);
 	}
     }
     
@@ -643,33 +737,6 @@ struct label *label_alt_create(struct label *lab1, struct label *lab2) {
 		strcpy(p, lab1->id);
 		p += l1;
 	    } else {
-		/*** reduction ***/
-		if (lab1->id[0] == '(') {
-		    int count = 1;
-		    char *q = &lab1->id[1];
-
-		    while (*q != '\0') {
-			switch (*q) {
-			case '(':
-			    count++;
-			    break;
-			case ')':
-			    count--;
-			    break;
-			default:
-			    break;
-			}
-
-			if (count == 0)
-			    break;
-
-			q++;
-		    }
-
-		    if (*q++ == ')' && *q++ == '?' && *q++ == '\0')
-			return lab1;
-		}
-		
 		*p++ = '(';
 		strcpy(p, lab1->id);
 
@@ -687,33 +754,6 @@ struct label *label_alt_create(struct label *lab1, struct label *lab2) {
 		strcpy(p, lab2->id);
 		p += l2;			
 	    } else {
-		/*** reduction ***/
-		if (lab2->id[0] == '(') {
-		    int count = 1;
-		    char *q = &lab2->id[1];
-
-		    while (*q != '\0') {
-			switch (*q) {
-			case '(':
-			    count++;
-			    break;
-			case ')':
-			    count--;
-			    break;
-			default:
-			    break;
-			}
-
-			if (count == 0)
-			    break;
-
-			q++;
-		    }
-
-		    if (*q++ == ')' && *q++ == '?' && *q++ == '\0')
-			return lab2;
-		}
-		
 		*p++ = '(';
 		strcpy(p, lab2->id);
 			    

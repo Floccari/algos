@@ -46,5 +46,8 @@ struct map_item *hashmap_search(struct map_item **hashmap, char *id, enum types 
 
 struct map_item *hashmap_search_with_sub(struct map_item **hashmap, char *id, enum types type, void *sub);
 
+struct map_item *hashmap_search_and_remove(struct map_item **hashmap, char *id, enum types type);
+
+struct map_item *hashmap_search_with_sub_and_remove(struct map_item **hashmap, char *id, enum types type, void *sub);
 
 #endif
