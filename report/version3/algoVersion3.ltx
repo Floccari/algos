@@ -18,17 +18,16 @@
 \begin{algorithm}
 \renewcommand{\thealgorithm}{}
 \floatname{algorithm}{}
-\caption{diagnosis(netBs)}
+\caption{diagnosis(netBs,split)}
 \begin{algorithmic}[1]
-\STATE $automaton \leftarrow sutomatons[netBs]$
 \STATE \COMMENT {considerando netBs come una rete comportamentale}
-\STATE \COMMENT {automaton è l'unico elemento della lista}
 \STATE \COMMENT {Definiamo gli stati "One To One" come quelli con una sola transizione entrante ed uscente e consideriamo tutti gli altri come "Many To Many", due transizioni vengono definite parallele se hanno in comune lo stato di partenza e di arrivo}
-\STATE \COMMENT {riporta l'unica transizione rimasta nell'automa}
+\STATE $automaton \leftarrow sutomatons[netBs]$
 \STATE $replaceInitialState(netBs)$
 \STATE $replaceEndStates(netBS)$
 \STATE $tran \leftarrow transitions[automaton]$
-\WHILE {$next[tran] \neq NIL$}
+\STATE $states \leftarrow states[automaton]$
+\WHILE {$(split=FALSE$ \AND $next[tran] \neq NIL)$ \OR $(split=FALSE$ \AND $(next[next[states]] \neq NIL$ \OR $multipleTr(automaton=TRUE)))$ }
 \STATE $replaceOneToOneStates(netBs)$
 \STATE $unifyParallelTransitions(netBs)$
 \STATE $replaceManyToManyStates(netBs)$
@@ -50,9 +49,9 @@
 \STATE $dest[tranEnd] \leftarrow destination$
 \STATE $rel[transition] \leftarrow relevanceLabel$
 \STATE $addTransition(transition,network)$
+\RETURN $transition$
 \end{algorithmic}
 \end{algorithm}
-
 
 \begin{algorithm}
 \renewcommand{\thealgorithm}{}
@@ -71,7 +70,7 @@
 \begin{algorithm}
 \renewcommand{\thealgorithm}{}
 \floatname{algorithm}{}
-\caption{replaceEndStates(network)}
+\caption{replaceEndStates(network,split)}
 \begin{algorithmic}[1]
 \STATE $automaton \leftarrow automatons[network]$
 \STATE $endState \leftarrow initialiseState()$
@@ -87,12 +86,25 @@
 \end{algorithmic}
 \end{algorithm}
 
+
+\begin{algorithm}
+\renewcommand{\thealgorithm}{}
+\floatname{algorithm}{}
+\caption{createNewRelevanceLabel(newId)}
+\begin{algorithmic}[1]
+\STATE $newLabel \leftarrow initialiseLabel()$
+\STATE $id[newLabel] \leftarrow newId$
+\STATE $labelType[newLabel] \leftarrow RELEVANCE$
+\RETURN $newLabel$
+\end{algorithmic}
+\end{algorithm}
+
+
 \begin{algorithm}
 \renewcommand{\thealgorithm}{}
 \floatname{algorithm}{}
 \caption{replaceOneToOneStates(network)}
 \begin{algorithmic}[1]
-\STATE \COMMENT {questa funzione fa riferimento alle righe 16-17 dello pseudocodice nella consegna}
 \STATE $automaton \leftarrow automatons[network]$
 \STATE $totalState \leftarrow states[network]$
 \WHILE {$totalState \neq NIL$}
@@ -103,11 +115,14 @@ $next[transitionOut] = NIL$}
 \STATE $labelIn \leftarrow rel[transitionIn]$
 \STATE $labelOut \leftarrow rel[transitionOut]$
 \STATE $newId \leftarrow oneToOneRelation(id[LabelIn],id[LabelOut])$
-\STATE $newLabel \leftarrow initialiseLabel()$
-\STATE $id[newLabel] \leftarrow newId$
-\STATE $labelType[newLabel] \leftarrow RELEVANCE$
-\STATE $connectTwoStates(network,transitionIn,transitionOut,newLabel)$
-\STATE $removeTheState(network,totalState)$
+\STATE $newLabel \leftarrow createNewRelevanceLabel(newId)$
+\STATE $tran \leftarrow connectTwoStates(network,transitionIn,transitionOut,newLabel)$
+\IF {$split = TRUE$}
+\IF {$final[totalState]=TRUE$}
+\STATE $tran $
+\ENDIF
+\ENDIF
+\STATE $removeTheState(automaton,totalState)$
 \ENDIF
 \STATE $totalState \leftarrow next[totalState]$
 \ENDWHILE
@@ -121,8 +136,7 @@ $next[transitionOut] = NIL$}
 \floatname{algorithm}{}
 \caption{unifyParallelTransitions(network)}
 \begin{algorithmic}[1]
-\STATE \COMMENT {questa funzione riassume le righe 18-19 dello pseudocodice nella consegna .
-lookup contiene la chiave usata per mappare la transizione all'interno dell'hashmap, una stringa contenente l'identificativo dello stato sorgente e lo stato di destinazione}
+\STATE \COMMENT {lookup contiene la chiave usata per mappare la transizione all'interno dell'hashmap, una stringa contenente l'identificativo dello stato sorgente e lo stato di destinazione}
 \STATE $automaton \leftarrow automatons[network]$
 \STATE $transitionHashMap \leftarrow createHashmap()$
 \STATE $ids \leftarrow createList()$
@@ -138,9 +152,8 @@ lookup contiene la chiave usata per mappare la transizione all'interno dell'hash
 \STATE $label1 \leftarrow rel[parallelTransition]$
 \STATE $label2 \leftarrow rel[tran]$
 \STATE $newId \leftarrow parallelRelation(id[label1],id[label2])$
-\STATE $id[label1] \leftarrow newId$
-\STATE $rel[parallelTransition] \leftarrow label1$
-\STATE $removeTransition(network,tran)$
+\STATE $rel[parallelTransition] \leftarrow createNewRelevanceLabel(newId)$
+\STATE $removeTransition(automaton,tran)$
 \ENDIF
 \STATE $tran \leftarrow next[tran]$
 \ENDWHILE
@@ -180,15 +193,13 @@ lookup contiene la chiave usata per mappare la transizione all'interno dell'hash
 \STATE $labelIn \leftarrow rel[transitionIn]$
 \STATE $labelOut \leftarrow rel[transitionOut]$
 \STATE $newId \leftarrow manyToManyRel(id[labelIn],id[labelOut],autoTransitionRel)$
-\STATE $newLabel \leftarrow labelInitialise()$
-\STATE $id[newLabel] \leftarrow newId$
+\STATE $newLabel \leftarrow createNewRelevanceLabel(newId)$
 \STATE $connectTwoStates(network,src[transitionIn],dest[transitionOut],newLabel)$ 
-\STATE $removeTheState(networl,totalState)$
 \STATE $transitionOut \leftarrow next[transitionOut]$
+\STATE $removeTheState(automaton,totalState)$
 \ENDWHILE
 \STATE $transitionIn \leftarrow next[transitionIn]$ 
 \ENDWHILE
-\STATE $removeState(network,state)$
 \end{algorithmic}
 \end{algorithm}
 
@@ -204,11 +215,55 @@ lookup contiene la chiave usata per mappare la transizione all'interno dell'hash
 \IF{$src[transitionIn] = dest[transitionIn]$ \AND $rel[transitionIn] = NIL$}
 \STATE $labelRel \leftarrow rel[transitionIn]$
 \STATE $autoTransitionRel \leftarrow id[labelRel]$
-\STATE $removeTransition(network,transitionIn)$
+\STATE $removeTransition(automaton,transitionIn)$
 \RETURN $autoTransitionRel$
 \ENDIF
 \STATE $transitionIn \leftarrow next[transitionIn]$
 \ENDWHILE
+\end{algorithmic}
+\end{algorithm}
+
+
+\begin{algorithm}
+\renewcommand{\thealgorithm}{}
+\floatname{algorithm}{}
+\caption{removeTheState(automaton,state)}
+\begin{algorithmic}[1]
+\STATE \COMMENT{Prima di eliminare lo stato dalla lista dell'automa bisogna liberarsi di tutte le transizioni in entrate e in uscita dallo stato}
+\STATE automaton	
+\STATE $transitionIn \leftarrow trIn[state]$
+\WHILE {$transitionIn \neq NIL $}
+\STATE $tran \leftarrow transitionIn$
+\STATE $removeTransition(tran)$
+\STATE $transitionIn \leftarrow next[transitionIn] $
+\ENDWHILE
+\STATE $transitionOut \leftarrow trOut[state]$
+\WHILE {$transitionOut \neq NIL $}
+\STATE $tran \leftarrow transitionOut$
+\STATE $removeTransition(tran)$
+\STATE $transitionOut \leftarrow next[transitionOut] $
+\ENDWHILE
+\STATE $sttrHashMap \leftarrow sttrHashMap[automaton]$
+\STATE $item \leftarrow statePuntactorSearch(state,sttrHashMap)$
+\STATE $listRemove(states[automaton],item)$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+\renewcommand{\thealgorithm}{}
+\floatname{algorithm}{}
+\caption{removeTransition(transition,state)}
+\begin{algorithmic}[1]
+\STATE \COMMENT{Per eliminare la transizione bisogna rimuoverla dalla lista dello stato in entrata e in uscita e dall'automa dove risiede}
+\STATE $sttrHashMap \leftarrow sttrHashMap[automaton]$
+\STATE $item \leftarrow transitionOutPuntactorSearch(transition,sttrHashMap)$
+\STATE $srcState \leftarrow src[transition]$
+\STATE $listRemove(trOut[scrState],item)$
+\STATE $item \leftarrow transitionInPuntactorSearch(transition,sttrHashMap)$
+\STATE $destState \leftarrow dest[transition]$
+\STATE $listRemove(trIn[destState],item)$
+\STATE $item \leftarrow transitionPuntactorSearch(transition,sttrHashMap)$
+\STATE $listRemove(transitions[automaton],item)$
 \end{algorithmic}
 \end{algorithm}
 

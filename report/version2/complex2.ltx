@@ -1,0 +1,34 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage{geometry}
+\geometry{a4paper, total={170mm,257mm}, left=20mm, top=20mm}
+\usepackage[utf8]{inputenc}
+\usepackage[italian]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{hyperref}
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\begin{document}
+\section{Analisi dello pseudocodice della versione 2}
+La struttura dello pseudocodice della funzione \emph{compObs} è strettamente simile a \emph{step}, a variare è l'aggiunta di un controllo in più nella riga 5 \emph{isTransitionObservable} e qualche differenza nelle funzioni \emph{createNewContext} e \emph{createNewState} come evidenziato.
+\subsection{Modifica della cardinabilità della rete comportamentale} 
+Il numero possibile di contesti in questa versione non dipende solo dai valori $n$ ed $l$ come visto nella precedentemente, a definire ogni singolo contesto si aggiunge anche il valore Integer \emph{obsIndex}; questo attributo indica esattamente a che "profondità" siamo arrivati con l'esecuzione della rete comportamentale e come ausilio per discriminare i singoli contesti che potrebbero "puntare" gli stessi stati e gli stessi link.
+\newline
+\newline
+Ad esempio: consideriamo una rete formata da due automi ($a_1$ e $a_2$) con all'interno due stati ciascuno ($s_1_1$ ,$s_1_2$ e $s_2_1$  $s_2_2$), un solo link tra i due automi con vari eventi definiti ($e_1$ ed altri) e una lista di etichette di osservabilità. Durante l'esecuzione di una ricorsione di \emph{compOs} arriviamo ad un contesto  $c_1={s_1_1,s_2_2,e_1}$, durante la sua creazione come si può vedere nell'algoritmo \emph{createNewContext} si "consuma" un'etichetta di osservabilità $o_1$ della lista e \emph{obsIndex} viene incrementato di un'unità (righe 16-17) e nell'algoritmo \emph{createNewState} anche aggiunto alla \emph{ctHashMap} (rig 15). \newline
+Pensiamo ora che in un'altra ricorsione che non ha ancora consumato l'etichetta $o_1$ arriviamo al contesto $c_2={s_1_1,s_2_2,e_1}$, durante il controllo nella \emph{ctHashMap} senza l'attributo \emph{obsIndex} tra i due contesti non ci sarebbe nessuna differenza e quindi $c_2$ sarebbe scartato. 
+\newline
+\newline
+Aggiorniamo quindi la cardinalità massima raggiungibile nella rete comportamentale a:
+\[\ s= (\prod_{i=1}^a n_i \prod_{j=1}^k  l_j)v \le n^al^ko = O(n^al^ko)\]
+Dove v rappresenta il numero di etichette definite in una lista di osservabilità e $o$ il numero totale di etichette di osservabilità nella rete.
+\newline
+\newline
+Questa variazione non modifica la natura del calcolo della singola chiamata di \emph{compObs} che rimane identica a \emph{step}, si aggiunge solo $o$ al calcolo della complessità computazionale effettiva: 
+\[O(a^3n^a^+^1l^ko)\]
+
+\end{document}
