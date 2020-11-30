@@ -22,15 +22,16 @@
 \begin{algorithmic}[1]
 \STATE \COMMENT {considerando netBs come una rete comportamentale}
 \STATE \COMMENT {Definiamo gli stati "One To One" come quelli con una sola transizione entrante ed uscente e consideriamo tutti gli altri come "Many To Many", due transizioni vengono definite parallele se hanno in comune lo stato di partenza e di arrivo}
+\STATE \COMMENT {la variabile \emph{split} è booleana e serve ad inciare se l'algoritmo che stiamo usando è EspressioneRegolare o EspressioniRegolari}
 \STATE $automaton \leftarrow sutomatons[netBs]$
 \STATE $replaceInitialState(netBs)$
-\STATE $replaceEndStates(netBS)$
+\STATE $finalState \leftarrow replaceEndStates(netBS)$
 \STATE $tran \leftarrow transitions[automaton]$
 \STATE $states \leftarrow states[automaton]$
 \WHILE {$(split=FALSE$ \AND $next[tran] \neq NIL)$ \OR $(split=FALSE$ \AND $(next[next[states]] \neq NIL$ \OR $multipleTr(automaton=TRUE)))$ }
 \STATE $replaceOneToOneStates(netBs)$
 \STATE $unifyParallelTransitions(netBs)$
-\STATE $replaceManyToManyStates(netBs)$
+\STATE $replaceManyToManyStates(netBs,finalState)$
 \IF    {$tran = NIL$}
 \STATE $error()$
 \ENDIF 
@@ -83,6 +84,7 @@
 \STATE $totalState \leftarrow next[totalState]$
 \ENDWHILE
 \STATE $final[endState] \leftarrow TRUE$
+\RETURN $endState$
 \end{algorithmic}
 \end{algorithm}
 
@@ -96,6 +98,50 @@
 \STATE $id[newLabel] \leftarrow newId$
 \STATE $labelType[newLabel] \leftarrow RELEVANCE$
 \RETURN $newLabel$
+\end{algorithmic}
+\end{algorithm}
+
+
+
+\begin{algorithm}
+\renewcommand{\thealgorithm}{}
+\floatname{algorithm}{}
+\caption{removeTheState(automaton,state)}
+\begin{algorithmic}[1]
+\STATE \COMMENT{Prima di eliminare lo stato dalla lista dell'automa bisogna liberarsi di tutte le transizioni in entrate e in uscita dallo stato}	
+\STATE $transitionIn \leftarrow trIn[state]$
+\WHILE {$transitionIn \neq NIL $}
+\STATE $tran \leftarrow transitionIn$
+\STATE $removeTransition(automaton,tran)$
+\STATE $transitionIn \leftarrow next[transitionIn] $
+\ENDWHILE
+\STATE $transitionOut \leftarrow trOut[state]$
+\WHILE {$transitionOut \neq NIL $}
+\STATE $tran \leftarrow transitionOut$
+\STATE $removeTransition(automaton,tran)$
+\STATE $transitionOut \leftarrow next[transitionOut] $
+\ENDWHILE
+\STATE $sttrHashMap \leftarrow sttrHashMap[automaton]$
+\STATE $item \leftarrow statePointerSearch(state,sttrHashMap)$
+\STATE $listRemove(states[automaton],item)$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+\renewcommand{\thealgorithm}{}
+\floatname{algorithm}{}
+\caption{removeTransition(automaton,transition)}
+\begin{algorithmic}[1]
+\STATE \COMMENT{Per eliminare la transizione bisogna rimuoverla dalla lista dello stato in entrata e in uscita e dall'automa dove risiede}
+\STATE $sttrHashMap \leftarrow sttrHashMap[automaton]$
+\STATE $item \leftarrow transitionOutPointerSearch(transition,sttrHashMap)$
+\STATE $srcState \leftarrow src[transition]$
+\STATE $listRemove(trOut[scrState],item)$
+\STATE $item \leftarrow transitionInPointerSearch(transition,sttrHashMap)$
+\STATE $destState \leftarrow dest[transition]$
+\STATE $listRemove(trIn[destState],item)$
+\STATE $item \leftarrow transitionPointerSearch(transition,sttrHashMap)$
+\STATE $listRemove(transitions[automaton],item)$
 \end{algorithmic}
 \end{algorithm}
 
@@ -119,7 +165,8 @@ $next[transitionOut] = NIL$}
 \STATE $tran \leftarrow connectTwoStates(network,transitionIn,transitionOut,newLabel)$
 \IF {$split = TRUE$}
 \IF {$final[totalState]=TRUE$}
-\STATE $tran $
+\STATE $value[tran] \leftarrow value[totalState]$
+\ELSE $value[tran] \leftarrow value[transitionOut]$
 \ENDIF
 \ENDIF
 \STATE $removeTheState(automaton,totalState)$
@@ -130,7 +177,6 @@ $next[transitionOut] = NIL$}
 \end{algorithm}
 
 
-
 \begin{algorithm}
 \renewcommand{\thealgorithm}{}
 \floatname{algorithm}{}
@@ -138,20 +184,23 @@ $next[transitionOut] = NIL$}
 \begin{algorithmic}[1]
 \STATE \COMMENT {lookup contiene la chiave usata per mappare la transizione all'interno dell'hashmap, una stringa contenente l'identificativo dello stato sorgente e lo stato di destinazione}
 \STATE $automaton \leftarrow automatons[network]$
-\STATE $transitionHashMap \leftarrow createHashmap()$
+\STATE $trHashMap \leftarrow createHashmap()$
 \STATE $ids \leftarrow createList()$
 \STATE $tran \leftarrow transitions[automaton]$
 \WHILE {$tran \neq NIL$}
-\STATE $lookup \leftarrow createLookUpForHashmap(tran)$
-\STATE $item \leftarrow hashmapSearch (transitionHashmap,lookup)$
+\STATE $lookup \leftarrow createLookUpForHashMap(trHashMap,lookup,value[tran])$
+\STATE $item \leftarrow hashmapSearch(trHashmap,lookup)$
 \IF{$item = NIL$}
 \STATE $itemForMap \leftarrow createItem(lookup,tran)$
-\STATE $hashMapInsert(transitionHashmap,itemForMap)$
+\STATE $hashMapInsert(trHashmap,itemForMap)$
 \ELSE 
 \STATE $parallelTransition \leftarrow value[item]$
 \STATE $label1 \leftarrow rel[parallelTransition]$
 \STATE $label2 \leftarrow rel[tran]$
+\IF {$split \neq TRUE$}
 \STATE $newId \leftarrow parallelRelation(id[label1],id[label2])$
+\ELSE $newId \leftarrow parallelRelationWithP(id[label1],id[label2],value[tran])$
+\ENDIF
 \STATE $rel[parallelTransition] \leftarrow createNewRelevanceLabel(newId)$
 \STATE $removeTransition(automaton,tran)$
 \ENDIF
@@ -166,7 +215,6 @@ $next[transitionOut] = NIL$}
 \floatname{algorithm}{}
 \caption{replaceManyToManyStates(network)}
 \begin{algorithmic}[1]
-\STATE \COMMENT {questa funzione riassume le righe 21-31 dello pseudocodice nella consegna}
 \STATE $automaton \leftarrow automatons[network]$
 \STATE $totalState \leftarrow states[automaton]$
 \WHILE{$totalState \neq NIL$}
@@ -194,7 +242,13 @@ $next[transitionOut] = NIL$}
 \STATE $labelOut \leftarrow rel[transitionOut]$
 \STATE $newId \leftarrow manyToManyRel(id[labelIn],id[labelOut],autoTransitionRel)$
 \STATE $newLabel \leftarrow createNewRelevanceLabel(newId)$
-\STATE $connectTwoStates(network,src[transitionIn],dest[transitionOut],newLabel)$ 
+\STATE $newTran \leftarrow connectTwoStates(network,src[transitionIn],dest[transitionOut],newLabel)$
+\IF {$split = TRUE$}
+\IF{$final[state]$ \AND $dest[newTran] = finalState$ \AND $value[transitionOut] \neq NIL$}
+\STATE $value[newTran] \leftarrow value[state]$
+\ELSE $value[tran] \leftarrow value[transitionOut]$
+\ENDIF
+\ENDIF 
 \STATE $transitionOut \leftarrow next[transitionOut]$
 \STATE $removeTheState(automaton,totalState)$
 \ENDWHILE
@@ -223,48 +277,5 @@ $next[transitionOut] = NIL$}
 \end{algorithmic}
 \end{algorithm}
 
-
-\begin{algorithm}
-\renewcommand{\thealgorithm}{}
-\floatname{algorithm}{}
-\caption{removeTheState(automaton,state)}
-\begin{algorithmic}[1]
-\STATE \COMMENT{Prima di eliminare lo stato dalla lista dell'automa bisogna liberarsi di tutte le transizioni in entrate e in uscita dallo stato}
-\STATE automaton	
-\STATE $transitionIn \leftarrow trIn[state]$
-\WHILE {$transitionIn \neq NIL $}
-\STATE $tran \leftarrow transitionIn$
-\STATE $removeTransition(tran)$
-\STATE $transitionIn \leftarrow next[transitionIn] $
-\ENDWHILE
-\STATE $transitionOut \leftarrow trOut[state]$
-\WHILE {$transitionOut \neq NIL $}
-\STATE $tran \leftarrow transitionOut$
-\STATE $removeTransition(tran)$
-\STATE $transitionOut \leftarrow next[transitionOut] $
-\ENDWHILE
-\STATE $sttrHashMap \leftarrow sttrHashMap[automaton]$
-\STATE $item \leftarrow statePuntactorSearch(state,sttrHashMap)$
-\STATE $listRemove(states[automaton],item)$
-\end{algorithmic}
-\end{algorithm}
-
-\begin{algorithm}
-\renewcommand{\thealgorithm}{}
-\floatname{algorithm}{}
-\caption{removeTransition(transition,state)}
-\begin{algorithmic}[1]
-\STATE \COMMENT{Per eliminare la transizione bisogna rimuoverla dalla lista dello stato in entrata e in uscita e dall'automa dove risiede}
-\STATE $sttrHashMap \leftarrow sttrHashMap[automaton]$
-\STATE $item \leftarrow transitionOutPuntactorSearch(transition,sttrHashMap)$
-\STATE $srcState \leftarrow src[transition]$
-\STATE $listRemove(trOut[scrState],item)$
-\STATE $item \leftarrow transitionInPuntactorSearch(transition,sttrHashMap)$
-\STATE $destState \leftarrow dest[transition]$
-\STATE $listRemove(trIn[destState],item)$
-\STATE $item \leftarrow transitionPuntactorSearch(transition,sttrHashMap)$
-\STATE $listRemove(transitions[automaton],item)$
-\end{algorithmic}
-\end{algorithm}
 
 \end{document}

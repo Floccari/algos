@@ -52,9 +52,9 @@ nello pseudocodice l'hashMap è chiamata come \emph{ctHashMap}
 La rimozione dei nodi avviene subito dopo al creazione dell'ambiente comportamentale nella funzione \emph{prune}, dopo l'esecuzione di \emph{step}: prenendo in considerazione il codice di \emph{prune} l'algoritmo prima individua i nodi attraverso una strategia backward richiamando la funzione /emph{dfsVisit} sui nodi finali (righe 5-6), una variante della visita in profondità che individua i nodi raggiungibili (a cui viene associato il colore nero) e quelli irraggiungibili (nodi rimasti bianchi); se un nodo non è raggiungibile dagli stati finali allora porta sicuramente ad un vicolo cieco quindi può essere rimosso (righe 11-13).
 Nel calcolo della complessità temporale la funzione \emph{prune} non verrà considerata perché non risulta critica: la rimozione degli stati rappresenta un problema rilevante da considerare (le funzioni \emph{removeTheState} e \emph{removeTransition}) ma verrà considerato nella versione 3 in seguito.
 
-\section{Analisi delle complessità}
+\subsection{Analisi delle complessità}
 
-\subsection{Calcolo della complessità temporale nella funzione step}
+\subsubsection{Calcolo della complessità temporale nella funzione step}
 Consideriamo ora lo pseudocodice di \emph{step}, vista la natura ricorsiva prima troviamo il costo di ogni ricorsione: il cuore dell'algoritmo si trova nel ciclo while di riga 4 dove avviene un controllo di tutte le transizioni in uscita, quindi il ciclo si ripeterà esattamente $t_j_i$ volte dove $t_j_i$ rappresenta il numero delle transizioni uscenti dal j-esimo stato presente nell'i-esimo automa.
 \newline
 \newline
@@ -72,7 +72,7 @@ Visto che in ogni automa al massimo possiamo avere $a-1$ link:
 
 \[\le a(n-1)(a-1) = O(a^3n)\] 
 
-\subsection{calcolo della complessità temporale nella ricorsione di step} 
+\subsubsection{calcolo della complessità temporale nella ricorsione di step} 
 
 \emph{step} segue una strategia in profondità e non ha una condizione specifica di stop, si ferma solo quando ha calcolato tutto lo spazio comportamentale e quindi trovato tutti i nodi raggiungibili, una ricorrenza che modellizza lo pseudocodice può essere:
 
@@ -88,7 +88,7 @@ Visto che ogni ricorrenza è indipendente dalle altre il costo totale diventa:
 
 La complessità quindi risulta molto sensibile alla crescita del numero degli automi e del numero di link questo a causa della crescia esponenziale del possibile numero di nodi nello spazio comportamentale
   
-\subsection{calcolo della complessità spaziale}
+\subsubsection{calcolo della complessità spaziale}
 
 I punti più critici nel calcolo della complessità spaziale risultano le funzioni \emph{step} e \emph{dfsVisit}, per quanto entrambi gli algoritmi non hanno ricorsioni in coda non è possibile usufruire di un compilatore ottimizzante per questo abbiamo ovviato per una strategia in profondità: essendo il numero di nodi nella rete comportamentale un valore sempre elevato rispetto alle dimensioni delle reti da cui derivano una strategia in ampiezza avrebbe occupato molta più memoria.
 \newline
