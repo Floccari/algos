@@ -20,7 +20,7 @@ data_structures/list.o : data_structures/list.h data_structures/list.c
 
 data_structures/hashmap.o : data_structures/hashmap.h data_structures/hashmap.c
 
-data_structures/network.o : data_structures/network.h data_structures/network.c
+data_structures/network.o : data_structures/network.h data_structures/network.c data_structures/list.h data_structures/hashmap.h
 
 features/bspace.o : features/bspace.h features/bspace.c data_structures/list.h data_structures/hashmap.h data_structures/network.h
 

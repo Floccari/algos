@@ -189,10 +189,53 @@ struct context *context_create(int aut_amount, int lk_amount) {
     return c;
 }
 
-struct context *context_copy(struct context *c) {
-    if (!c)
-	return NULL;
+char *context_id_create(struct context *c) {
+    int size = 0;
+    int slen[c->aut_amount];
+    int elen[c->lk_amount];
+
+    for (int i = 0; i < c->aut_amount; i++) {
+	slen[i] = strlen(c->states[i]->id);
+	size += slen[i] + 1;
+    }
+
+    for (int i = 0; i < c->lk_amount; i++) {
+	elen[i] = c->buffers[i] ? strlen(c->buffers[i]) : 0;
+	size += elen[i] + 1;
+    }
+
+    int obs_size = c->obs_index < 10 ? 1 :
+	c->obs_index < 100 ? 2 :
+	c->obs_index < 1000 ? 3 : 4;
+
+    size += obs_size + 1;
     
+    char *id = calloc(size, sizeof (char));
+    char *p = id;
+    
+    for (int i = 0; i < c->aut_amount; i++) {
+	strcpy(p, c->states[i]->id);
+	p += slen[i];
+	*p++ = '#';
+    }
+
+    for (int i = 0; i < c->lk_amount; i++){
+	if (c->buffers[i]) {
+	    strcpy(p, c->buffers[i]);
+	    p += elen[i];
+	}
+
+	*p++ = '#';
+    }
+
+    sprintf(p, "%d", c->obs_index);
+    p += obs_size;
+    *p++ = '\0';
+    
+    return id;
+}
+
+struct context *context_copy(struct context *c) {
     struct context *copy = context_create(c->aut_amount, c->lk_amount);
     memcpy(copy->states, c->states, sizeof (struct state *) * c->aut_amount);
     memcpy(copy->buffers, c->buffers, sizeof (char *) * c->lk_amount);
@@ -209,44 +252,6 @@ void context_destroy(struct context *c) {
     free(c->states);
     free(c->buffers);
     free(c);
-}
-
-char *context_digest(struct context *c) {
-    char *digest = calloc(c->aut_amount + c->lk_amount + 1, sizeof (char));
-    digest[c->aut_amount + c->lk_amount] = '\0';
-
-    for (int i = 0; i < c->aut_amount; i++)
-	digest[i] = hash(c->states[i]->id, 89) + 33;    // characters from 33 to 122
-	
-    for (int i = 0; i < c->lk_amount; i++)
-	if (c->buffers[i])
-	    digest[i + c->aut_amount] = hash(c->buffers[i], 89) + 33;    // characters from 33 to 122
-	else
-	    digest[i + c->aut_amount] = 123;    // link is empty, use character 123
-
-    return digest;
-}
-
-bool context_compare(struct context *c1, struct context *c2) {
-    if (memcmp(c1->states, c2->states, sizeof (struct state *) * c1->aut_amount) == 0 &&
-	memcmp(c1->buffers, c2->buffers, sizeof (char *) * c1->lk_amount) == 0 &&
-	c1->obs_index == c2->obs_index)
-	return true;
-
-    return false;
-}
-
-struct map_item *context_search(struct map_item **hashmap, struct context *c) {
-    int key = hash(c->id, HASH_TABLE_SIZE);
-    struct map_item *item = hashmap[key];
-    
-    while (item)
-	if (item->type == CONTEXT && strcmp(item->id, c->id) == 0 && context_compare((struct context *) item->value, c))
-	    return item;
-	else
-	    item = item->next;
-
-    return item;
 }
 
 struct network *network_create(char *id) {

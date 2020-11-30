@@ -71,7 +71,7 @@ struct network *compute(struct network *net, bool comp) {
     
     memset(c->buffers, 0, sizeof (char *) * net->lk_amount);
     
-    c->id = context_digest(c);
+    c->id = context_id_create(c);
     c->current_obs = get_last(net->observation);    // since it's stored in REVERSE ORDER
 
     /*** create initial state and insert it ***/
@@ -150,7 +150,7 @@ void step(struct state *current_bs_state) {
 		}
 
 		/*** set context id ***/
-		new_context->id = context_digest(new_context);
+		new_context->id = context_id_create(new_context);
 
 		if (comp_set) {
 		    /*** skip transition if not applicable ***/
@@ -178,7 +178,7 @@ void step(struct state *current_bs_state) {
 		new_tr->rel = label_copy(tr->rel);
 
 		/*** check if we already visited this context ***/
-		struct map_item *item = context_search(ct_hashmap, new_context);
+		struct map_item *item = hashmap_search(ct_hashmap, new_context->id, CONTEXT);
 	    
 		if (item) {
 		    context_destroy(new_context);

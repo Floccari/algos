@@ -121,15 +121,11 @@ struct link *link_create(char *id);
 
 struct context *context_create(int aut_amount, int lk_amount);
 
+char *context_id_create(struct context *c);
+
 struct context *context_copy(struct context *c);
 
 void context_destroy(struct context *c);
-
-char *context_digest(struct context *c);
-
-bool context_compare(struct context *c1, struct context *c2);
-
-struct map_item *context_search(struct map_item **hashmap, struct context *c);
 
 struct network *network_create(char *id);
 
