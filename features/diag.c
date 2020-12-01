@@ -106,7 +106,7 @@ void do_regexp(struct automaton *aut, bool split) {
 
 
 bool multiple_tr(struct automaton *aut) {
-    struct map_item **sub_hashmap = hashmap_create();
+    struct hashmap *sub_hashmap = hashmap_create(HASH_TABLE_SIZE);
     bool empty_tr = false;
 
     struct list *l = aut->transitions;
@@ -119,7 +119,7 @@ bool multiple_tr(struct automaton *aut) {
 	    if (empty_tr) {
 		/*** cleanup ***/
 		hashmap_empty(sub_hashmap, false);
-		free(sub_hashmap);
+		hashmap_destroy(sub_hashmap);
 		
 		return true;
 	    } else
@@ -132,7 +132,7 @@ bool multiple_tr(struct automaton *aut) {
 	    if (item) {
 		/*** cleanup ***/
 		hashmap_empty(sub_hashmap, false);
-		free(sub_hashmap);
+		hashmap_destroy(sub_hashmap);
 
 		return true;
 	    } else {
@@ -147,7 +147,7 @@ bool multiple_tr(struct automaton *aut) {
 
     /*** cleanup ***/
     hashmap_empty(sub_hashmap, false);
-    free(sub_hashmap);    
+    hashmap_destroy(sub_hashmap);    
 
     return false;
 }
@@ -197,7 +197,7 @@ void phase_one(struct automaton *aut, bool split) {
 }
 
 void phase_two(struct automaton *aut, bool split) {
-    struct map_item **tr_hashmap = hashmap_create();
+    struct hashmap *tr_hashmap = hashmap_create(HASH_TABLE_SIZE);
 
     struct list *l = aut->transitions;
 
@@ -266,7 +266,7 @@ void phase_two(struct automaton *aut, bool split) {
 
     /*** cleanup ***/
     hashmap_empty(tr_hashmap, true);
-    free(tr_hashmap);
+    hashmap_destroy(tr_hashmap);
 }
 
 void phase_three(struct automaton *aut, bool split) {

@@ -9,7 +9,7 @@
 #include <signal.h>
 
 extern struct network *net;
-extern struct map_item **hashmap;
+extern struct hashmap *hashmap;
 extern void yyparse();
 extern void yyset_in(FILE *in);
 
@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
     /*** parse input network ***/
     yyparse();
     hashmap_empty(hashmap, false);
-    free(hashmap);
+    hashmap_destroy(hashmap);
 
     /*** actions ***/
     if (strcmp(argv[1], "test") == 0) {

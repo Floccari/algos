@@ -59,7 +59,7 @@ struct automaton {
     struct list *states;
     struct state *initial;
     struct list *transitions;
-    struct map_item **sttr_hashmap;
+    struct hashmap *sttr_hashmap;
     /*struct list *lk_in;
       struct list *lk_out;*/
 };

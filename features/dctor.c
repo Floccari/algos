@@ -107,7 +107,7 @@ struct automaton *get_diagnosticator(struct automaton *bspace_aut) {
 }
 
 char *diagnosticate(struct automaton *dctor, struct list *observation) {
-    struct map_item **s_hashmap = hashmap_create();
+    struct hashmap *s_hashmap = hashmap_create(HASH_TABLE_SIZE);
 
     struct state *initial = dctor->initial;
     
@@ -121,13 +121,13 @@ char *diagnosticate(struct automaton *dctor, struct list *observation) {
     while (l) {
 	struct label *lab = (struct label *) l->value;
 
-	struct map_item **new_hashmap = hashmap_create();
+	struct hashmap *new_hashmap = hashmap_create(HASH_TABLE_SIZE);
 	bool empty = true;
 	
 	/*** foreach state in s_hashmap ***/
-	for (int i = 0; i < HASH_TABLE_SIZE; i++) {
-	    if (s_hashmap[i]) {
-		struct map_item *item = s_hashmap[i];
+	for (int i = 0; i < s_hashmap->size; i++) {
+	    if (s_hashmap->buffer[i]) {
+		struct map_item *item = s_hashmap->buffer[i];
 		
 		while (item) {
 		    struct state *st = (struct state *) item->value;
@@ -168,13 +168,13 @@ char *diagnosticate(struct automaton *dctor, struct list *observation) {
 	}
 
 	/*** s_hashmap <- new_hashmap ***/
-	struct map_item **tmp = s_hashmap;
+	struct hashmap *tmp = s_hashmap;
 	s_hashmap = new_hashmap;
 	
 	if (!empty)
 	    hashmap_empty(tmp, false);
 
-	free(tmp);
+	hashmap_destroy(tmp);
 
 	if (stop) {
 	    fprintf(stderr, "# Received termination signal during execution\n");
@@ -189,9 +189,9 @@ char *diagnosticate(struct automaton *dctor, struct list *observation) {
     bool initialized = false;
 
     /*** foreach state in s_hashmap ***/
-    for (int i = 0; i < HASH_TABLE_SIZE; i++) {
-	if (s_hashmap[i]) {
-	    struct map_item *item = s_hashmap[i];
+    for (int i = 0; i < s_hashmap->size; i++) {
+	if (s_hashmap->buffer[i]) {
+	    struct map_item *item = s_hashmap->buffer[i];
 	    
 	    while (item) {
 		struct state *st = item->value;
@@ -222,7 +222,7 @@ char *diagnosticate(struct automaton *dctor, struct list *observation) {
 
     /*** cleanup ***/
     hashmap_empty(s_hashmap, false);
-    free(s_hashmap);
+    hashmap_destroy(s_hashmap);
 
     if (diagnosis)
 	return diagnosis->id;
@@ -233,7 +233,7 @@ char *diagnosticate(struct automaton *dctor, struct list *observation) {
 
 struct automaton *get_silent_space(struct automaton *bspace_aut) {
     struct automaton *sspace_aut = automaton_create("sspace");
-    struct map_item **s_hashmap = hashmap_create();
+    struct hashmap *s_hashmap = hashmap_create(HASH_TABLE_SIZE);
 
     /*** some lists are cycled in reverse order to make the output automaton prettier ***/
     
@@ -379,7 +379,7 @@ struct automaton *get_silent_space(struct automaton *bspace_aut) {
 
     /*** cleanup ***/
     hashmap_empty(s_hashmap, true);
-    free(s_hashmap);
+    hashmap_destroy(s_hashmap);
     
     return sspace_aut;
 }

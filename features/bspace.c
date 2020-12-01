@@ -8,7 +8,7 @@ long st_amount;
 long tr_amount;
 bool comp_set;
 struct network *bs_net;
-struct map_item **ct_hashmap;
+struct hashmap *ct_hashmap;
 
 struct network *compute(struct network *net, bool comp);
 void step(struct state *current_bs_state);
@@ -26,7 +26,7 @@ struct network *bspace_compute(struct network *net) {
 
 
 struct network *compute(struct network *net, bool comp) {
-    ct_hashmap = hashmap_create();
+    ct_hashmap = hashmap_create(HASH_TABLE_SIZE);
 
     if (comp)
 	bs_net = network_create("comp_network");
@@ -101,7 +101,7 @@ struct network *compute(struct network *net, bool comp) {
 
     /*** cleanup (does not delete contexts) ***/
     hashmap_empty(ct_hashmap, false);
-    free(ct_hashmap);
+    hashmap_destroy(ct_hashmap);
     
     return bs_net;
 }

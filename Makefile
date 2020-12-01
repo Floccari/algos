@@ -7,10 +7,12 @@
 # default
 CFLAGS := -O2
 
+LDLIBS := -lm
+
 default : program
 
 program : input/lexer.o input/parser.o data_structures/list.o data_structures/hashmap.o data_structures/network.o features/bspace.o features/diag.o features/dctor.o main.o
-	cc $(CFLAGS) -o $@ $^
+	cc $(CFLAGS) -o $@ $^ $(LDLIBS)
 
 input/lexer.o : input/lexer.c data_structures/list.h data_structures/hashmap.h data_structures/network.h
 

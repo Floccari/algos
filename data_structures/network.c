@@ -163,7 +163,7 @@ struct automaton *automaton_create(char *id) {
     struct automaton *aut = malloc(sizeof (struct automaton));
     memset(aut, 0, sizeof (struct automaton));
     aut->id = id;
-    aut->sttr_hashmap = hashmap_create();
+    aut->sttr_hashmap = hashmap_create(HASH_TABLE_SIZE);
 
     return aut;
 }

@@ -28,7 +28,9 @@ struct transition *tr = NULL;
 struct label *lab = NULL;
 
 struct map_item *item = NULL;
-struct map_item **hashmap;
+struct hashmap *hashmap;
+
+#define SYMBOL_TABLE_SIZE 1000
 
 %}
 
@@ -42,7 +44,7 @@ program : net-decl aut-decl observation
 	;
 
 net-decl : NETWORK ID {net = network_create(lexval);
- 	   	       hashmap = hashmap_create();}
+ 	   	       hashmap = hashmap_create(SYMBOL_TABLE_SIZE);}
 		       
 	   ':' aut-list ev-list link-list END
 	 ;
