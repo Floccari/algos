@@ -1,6 +1,7 @@
 #include "bspace.h"
 
 #include <signal.h>
+#include <math.h>
 
 extern sig_atomic_t stop;
 
@@ -26,7 +27,19 @@ struct network *bspace_compute(struct network *net) {
 
 
 struct network *compute(struct network *net, bool comp) {
-    ct_hashmap = hashmap_create(HASH_TABLE_SIZE);
+    /*** compute the maximum amount of contexts ***/
+    int sam = maximum_state_amount(net);
+    int evam = item_amount(net->events) + 1;
+
+    int ct_amount;
+
+    if (comp) {
+	int obsam = item_amount(net->observation) + 1;
+	ct_amount = pow(sam, net->aut_amount) * pow(evam, net->lk_amount) * obsam;
+    } else
+	ct_amount = pow(sam, net->aut_amount) * pow(evam, net->lk_amount);
+    
+    ct_hashmap = hashmap_create(ct_amount);
 
     if (comp)
 	bs_net = network_create("comp_network");
@@ -40,9 +53,9 @@ struct network *compute(struct network *net, bool comp) {
     struct automaton *bs_aut;
 
     if (comp)
-	bs_aut = automaton_create("comp");
+	bs_aut = automaton_create("comp", ct_amount * ct_amount);
     else
-	bs_aut = automaton_create("bspace");	
+	bs_aut = automaton_create("bspace", ct_amount * ct_amount);
 
     bs_net->automatons = head_insert(bs_net->automatons,
 				     list_create(bs_aut));

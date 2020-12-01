@@ -115,7 +115,7 @@ void transition_attach(struct automaton *aut, struct transition *tr);
 
 void transition_detach(struct automaton *aut, struct transition *tr);
 
-struct automaton *automaton_create(char *id);
+struct automaton *automaton_create(char *id, int hashmap_size);
 
 struct link *link_create(char *id);
 
@@ -146,5 +146,7 @@ struct label *label_cat_create(struct label *lab1, struct label *lab2);
 struct label *label_alt_create(struct label *lab1, struct label *lab2);
 
 struct label *label_cat_auto_create(struct label *lab1, struct label *lab_auto, struct label *lab2);
+
+int maximum_state_amount(struct network *net);
 
 #endif

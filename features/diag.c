@@ -106,7 +106,8 @@ void do_regexp(struct automaton *aut, bool split) {
 
 
 bool multiple_tr(struct automaton *aut) {
-    struct hashmap *sub_hashmap = hashmap_create(HASH_TABLE_SIZE);
+    int tam = item_amount(aut->transitions);
+    struct hashmap *sub_hashmap = hashmap_create(tam);
     bool empty_tr = false;
 
     struct list *l = aut->transitions;
@@ -197,7 +198,8 @@ void phase_one(struct automaton *aut, bool split) {
 }
 
 void phase_two(struct automaton *aut, bool split) {
-    struct hashmap *tr_hashmap = hashmap_create(HASH_TABLE_SIZE);
+    int tam = item_amount(aut->transitions);
+    struct hashmap *tr_hashmap = hashmap_create(tam);
 
     struct list *l = aut->transitions;
 

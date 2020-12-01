@@ -24,4 +24,6 @@ struct list *item_remove(struct list *l, struct list *item);
 
 //struct list *search_and_remove(struct list *l, void *value);
 
+int item_amount(struct list *l);
+
 #endif

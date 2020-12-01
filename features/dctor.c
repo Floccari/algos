@@ -1,6 +1,7 @@
 #include "dctor.h"
 
 #include <signal.h>
+#include <math.h>
 
 extern sig_atomic_t stop;
 
@@ -9,7 +10,7 @@ struct list *visited;
 long tr_amount;
 
 struct automaton *get_silent_space(struct automaton *bspace_aut);
-struct automaton *get_silent(struct state *st);
+struct automaton *get_silent(struct state *st, int bspace_st_amount);
 void silent_visit(struct state *st);
 
 
@@ -107,7 +108,8 @@ struct automaton *get_diagnosticator(struct automaton *bspace_aut) {
 }
 
 char *diagnosticate(struct automaton *dctor, struct list *observation) {
-    struct hashmap *s_hashmap = hashmap_create(HASH_TABLE_SIZE);
+    int sam = item_amount(dctor->states);
+    struct hashmap *s_hashmap = hashmap_create(sam);
 
     struct state *initial = dctor->initial;
     
@@ -121,7 +123,7 @@ char *diagnosticate(struct automaton *dctor, struct list *observation) {
     while (l) {
 	struct label *lab = (struct label *) l->value;
 
-	struct hashmap *new_hashmap = hashmap_create(HASH_TABLE_SIZE);
+	struct hashmap *new_hashmap = hashmap_create(sam);
 	bool empty = true;
 	
 	/*** foreach state in s_hashmap ***/
@@ -232,8 +234,9 @@ char *diagnosticate(struct automaton *dctor, struct list *observation) {
 
 
 struct automaton *get_silent_space(struct automaton *bspace_aut) {
-    struct automaton *sspace_aut = automaton_create("sspace");
-    struct hashmap *s_hashmap = hashmap_create(HASH_TABLE_SIZE);
+    int bspace_st_amount = item_amount(bspace_aut->states);
+    struct automaton *sspace_aut = automaton_create("sspace", bspace_st_amount * bspace_st_amount);
+    struct hashmap *s_hashmap = hashmap_create(bspace_st_amount);
 
     /*** some lists are cycled in reverse order to make the output automaton prettier ***/
     
@@ -261,7 +264,7 @@ struct automaton *get_silent_space(struct automaton *bspace_aut) {
 
 	if (initial || obs) {
 	    /*** compute the silent closure of the current state ***/
-	    struct automaton *closure = get_silent(st);
+	    struct automaton *closure = get_silent(st, bspace_st_amount);
 
 	    /*** create a new state in the silent space ***/
 	    struct state *s_st = state_create(st->id);
@@ -384,8 +387,8 @@ struct automaton *get_silent_space(struct automaton *bspace_aut) {
     return sspace_aut;
 }
 
-struct automaton *get_silent(struct state *st) {
-    s_aut = automaton_create("silent");
+struct automaton *get_silent(struct state *st, int bspace_st_amount) {
+    s_aut = automaton_create("silent", bspace_st_amount * bspace_st_amount);
     visited = NULL;
     tr_amount = 0;
 

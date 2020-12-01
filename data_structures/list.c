@@ -52,3 +52,14 @@ struct list *item_remove(struct list *l, struct list *item) {
 /*     // in case it was not found */
 /*     return l; */
 /* } */
+
+int item_amount(struct list *l) {
+    int tot = 0;
+    
+    while (l) {
+	tot++;
+	l = l->next;
+    }
+
+    return tot;
+}

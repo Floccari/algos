@@ -32,8 +32,6 @@ struct hashmap {
     // 4 bytes
 };
 
-#define HASH_TABLE_SIZE 307
-
 
 struct map_item *map_item_create(char *id, enum types type, void *value);
 

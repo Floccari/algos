@@ -159,11 +159,11 @@ void transition_detach(struct automaton *aut, struct transition *tr) {
     free(item);
 }
 
-struct automaton *automaton_create(char *id) {
+struct automaton *automaton_create(char *id, int hashmap_size) {
     struct automaton *aut = malloc(sizeof (struct automaton));
     memset(aut, 0, sizeof (struct automaton));
     aut->id = id;
-    aut->sttr_hashmap = hashmap_create(HASH_TABLE_SIZE);
+    aut->sttr_hashmap = hashmap_create(hashmap_size);
 
     return aut;
 }
@@ -811,4 +811,21 @@ struct label *label_cat_auto_create(struct label *lab1, struct label *lab_auto, 
     }
 
     return NULL;
+}
+
+int maximum_state_amount(struct network *net) {
+    int max = 0;
+    struct list *la = net->automatons;
+
+    while (la) {
+	struct automaton *aut = (struct automaton *) la->value;
+	int tot = item_amount(aut->states);
+
+	if (tot > max)
+	    max = tot;
+	
+	la = la->next;
+    }
+
+    return max;
 }
