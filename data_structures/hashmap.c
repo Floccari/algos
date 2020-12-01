@@ -65,13 +65,13 @@ void hashmap_destroy(struct hashmap *hashmap) {
 
 int hash(char *id, int m) {
     int h = 0;
-    float a = 0.618;    // (sqrt(5) - 1) / 2;
+    float a = 0.618034;    // (sqrt(5) - 1) / 2;
     char k;
     
     while ((k = *id++)) {
 	float term, fract, integ;
 	
-	term = ((h << 8) + k) * a;
+	term = ((h << 6) + k) * a;
 	fract = modff(term, &integ);
 	
 	h = fract * m;
