@@ -1,0 +1,196 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage{geometry}
+\geometry{a4paper, total={170mm,257mm}, left=20mm, top=20mm}
+\usepackage[utf8]{inputenc}
+\usepackage[italian]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{hyperref}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\begin{document}
+\begin{algorithm}
+\renewcommand{\thealgorithm}{}
+\floatname{algorithm}{}
+\caption{SilentSpace(bAutomaton)}
+\begin{algorithmic}[1] 
+\STATE $sAutomaton \leftarrow addClosuresInSilentSpace(bAutomaton)$
+\STATE $sHashMap \leftarrow hashMapCreate()$
+\STATE $fillSHashMapWithClosureStates(sHashMap)$
+\STATE $addTransitionsInSilentSpace(behavioralAutomaton,sHashMap,sAutomaton)$
+\RETURN $sAutomaton$
+\end{algorithmic}
+\end{algorithm}
+
+
+
+\begin{algorithm}
+\renewcommand{\thealgorithm}{}
+\floatname{algorithm}{}
+\caption{addClosuresInSilentSpace(behavioralAutomaton)}
+\begin{algorithmic}[1]
+\STATE \COMMENT{Lo spazio delle chiusure silenziose sarà implementato attraverso la struttura dati automaton. L'attributo value in state per 
+la chiusura silenzionsa punterà alla chiusura relativa a quello stato}
+\STATE $silentAutomaton \leftarrow initializeAutomaton()$
+\STATE $bStates \leftarrow tail(states[behaviorlaAutomaton])$
+\WHILE {$bStates \neq NIL $}
+\IF {$isInitialState(bStates)$}
+\STATE $closure \leftarrow getSilent(bStates)$
+\STATE $newState \leftarrow initializeState()$
+\STATE $id[newState] \leftarrow id[bStates]$
+\STATE $addState(silentAutomaton,newState)$
+\IF {$initial = TRUE$}
+\STATE $initial[sAuromaton] \leftarrow newState$
+\ENDIF
+\STATE $value[newState] \leftarrow closure$
+\ENDIF
+\STATE $bStates \leftarrow prev[bStates]$
+\ENDWHILE 
+\RETURN $silentAutomaton$
+\end{algorithmic}
+\end{algorithm}
+
+
+
+
+\begin{algorithm}
+\renewcommand{\thealgorithm}{}
+\floatname{algorithm}{}
+\caption{isInitialState(state)}
+\begin{algorithmic}[1]
+\STATE $obs \leftarrow FALSE$
+\STATE $transitionIn \leftarrow trIn[state]$
+\WHILE {$transitionIn \neq NIL$}
+\IF {$obs[transitionIn] \neq NIL$}
+\STATE $obs \leftarrow TRUE$
+\STATE $\textbf{break}$
+\ENDIF
+\STATE $transitionIn \leftarrow next[transitionIn]$
+\ENDWHILE
+\RETURN $(obs = TRUE$ \OR $bStates = initial[behavioralAutomaton])$
+\end{algorithmic}
+\end{algorithm}
+
+
+
+
+\begin{algorithm}
+\renewcommand{\thealgorithm}{}
+\floatname{algorithm}{}
+\caption{fillSHashMapWithClosureStates(sHashMap)}
+\begin{algorithmic}[1]
+\STATE \COMMENT {closureStates contiene gli stati presenti nella chiusura silenziosa. Il lookup si crea con l'id dello stato nella chiusura, questo lookup punterà allo stato iniziale della chiusura dove è situato lo stato }
+\STATE $sStates \leftarrow states[sAutomaton]$
+\WHILE {$sStates \neq NIL $}
+\STATE $closure \leftarrow value[sStates]$
+\STATE $closureStates \leftarrow states[closure]$
+\WHILE {$closureStates \neq NIL$}
+\STATE $lookup \leftarrow createLookUpForHashMap(id[closureStates])$
+\STATE $itemForMap \leftarrow createItem(lookup,sStates)$
+\STATE $hashMapInsert(sHashMap,itemForMap)$
+\STATE $closureStates \leftarrow next[closureStates]$
+\ENDWHILE
+\STATE $sStates \leftarrow next[sStates]$
+\ENDWHILE
+\end{algorithmic}
+\end{algorithm}
+
+
+
+
+\begin{algorithm}
+\renewcommand{\thealgorithm}{}
+\floatname{algorithm}{}
+\caption{addTransitionsInSilentSpace(behavioralAutomaton,closureStatesHashMap,sAutomaton)}
+\begin{algorithmic}[1]
+\STATE $bTransitions \leftarrow tail(transitions[behavioralAutomaton])$
+\WHILE {$ bTransitions \neq NIL$}
+\IF {$obs[bTransitions] \neq NIL$}
+\STATE $lookup \leftarrow createLookupForHashMap(id[dest[bTransitions]])$
+\STATE $item \leftarrow hashMapSearch(closureStatesHashMap,lookup)$
+\STATE $dest \leftarrow value[item]$
+\STATE $sStates \leftarrow tail(states[sAutomaton])$
+\WHILE {$sStates \neq NIL$}
+\STATE $lookup \leftarrow createLookUpForHashMap(id[src[bTransitions]]) $
+\STATE $item \leftarrow hashMapSearch(closureStatesHashMap,lookup)$
+\IF {$item \neq NIL$}
+\STATE $src \leftarrow value[item]$
+\STATE $connectTwoStates(sAutomaton,src,dest)$ 
+\ENDIF
+\STATE $sStates \leftarrow prev[sStates]$
+\ENDWHILE
+\ENDIF
+\STATE $bTransitions \leftarrow prev[bTransitions]$
+\ENDWHILE
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+\renewcommand{\thealgorithm}{}
+\floatname{algorithm}{}
+\caption{getSilent(state)}
+\begin{algorithmic}[1]
+\STATE \COMMENT {negli attributi value vengono salvati i puntatori agli stati omonimi che si trovano nella chiusura di uno stato
+e nello spazio comportamentale}
+\STATE $closure \leftarrow initializeAutomaton()$
+\STATE $closeInitState \leftarrow createAndAddClosureState(state,closure)$
+\STATE $initial[closure] \leftarrow closeInitState$
+\STATE $silentVisitDfs(state,closure)$
+\RETURN $closure$
+\end{algorithmic}
+\end{algorithm}
+
+
+\begin{algorithm}
+\renewcommand{\thealgorithm}{}
+\floatname{algorithm}{}
+\caption{silentVisitDfs(state,closure)}
+\begin{algorithmic}[1]
+\STATE \COMMENT {exit verrà usato successivamente per il diagnosticatore}
+\STATE $color[state] \leftarrow GRAY$
+\STATE $transitionOut \leftarrow trOut[state]$
+\WHILE {$transitionOut \neq NIL$}
+\IF{$ obs[transitionsOut] \neq NIL$}
+\STATE $tranDest \leftarrow dest[transitionOut]$
+\IF {$color[tranDest] = WHITE$}
+\STATE $connectoTwoStates(closure,tranDest,nextState,rel[transitionOut])$
+\STATE $closeState \leftarrow createClosureState(tranDest,closure)$
+\STATE $final[closeState] \leftarrow final[tranDest]$
+\STATE $silentVisitDfs(tranDest,closure)$
+\ELSE 
+\STATE $connectTwoStates(closure,tranDest,nextState,rel[transitionOut])$
+\ENDIF
+\ELSE 
+\STATE $nextState \leftarrow value[tranDest]$
+\STATE $exit \leftarrow TRUE$
+\ENDIF
+\ENDWHILE
+\end{algorithmic}
+\end{algorithm}
+
+
+
+
+\begin{algorithm}
+\renewcommand{\thealgorithm}{}
+\floatname{algorithm}{}
+\caption{createClosureState(state,closure)}
+\begin{algorithmic}[1]
+\STATE $closeState \leftarrow initializeState()$
+\STATE $id[closeState] \leftarrow id[state]$
+\STATE $addState(closure,nextState)$
+\STATE $value[state] \leftarrow cState$
+\STATE $value[closeState] \leftarrow state$
+\RETURN $closeState$
+\end{algorithmic}
+\end{algorithm}
+
+
+
+\end{document}
