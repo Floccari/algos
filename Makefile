@@ -1,7 +1,7 @@
 # gdb, memcheck
 #CFLAGS := -O0 -g -Wall -Wextra
 
-# cachegrind, callgrind
+# cachegrind, callgrind, massif
 #CFLAGS := -O2 -g -Wall -Wextra
 
 # default

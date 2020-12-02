@@ -53,9 +53,9 @@ struct network *compute(struct network *net, bool comp) {
     struct automaton *bs_aut;
 
     if (comp)
-	bs_aut = automaton_create("comp", ct_amount * ct_amount);
+	bs_aut = automaton_create("comp", 4 * ct_amount);
     else
-	bs_aut = automaton_create("bspace", ct_amount * ct_amount);
+	bs_aut = automaton_create("bspace", 4 * ct_amount);
 
     bs_net->automatons = head_insert(bs_net->automatons,
 				     list_create(bs_aut));

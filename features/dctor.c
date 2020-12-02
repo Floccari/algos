@@ -235,7 +235,7 @@ char *diagnosticate(struct automaton *dctor, struct list *observation) {
 
 struct automaton *get_silent_space(struct automaton *bspace_aut) {
     int bspace_st_amount = item_amount(bspace_aut->states);
-    struct automaton *sspace_aut = automaton_create("sspace", bspace_st_amount * bspace_st_amount);
+    struct automaton *sspace_aut = automaton_create("sspace", 4 * bspace_st_amount);
     struct hashmap *s_hashmap = hashmap_create(bspace_st_amount);
 
     /*** some lists are cycled in reverse order to make the output automaton prettier ***/
@@ -388,7 +388,7 @@ struct automaton *get_silent_space(struct automaton *bspace_aut) {
 }
 
 struct automaton *get_silent(struct state *st, int bspace_st_amount) {
-    s_aut = automaton_create("silent", bspace_st_amount * bspace_st_amount);
+    s_aut = automaton_create("silent", 4 * bspace_st_amount);
     visited = NULL;
     tr_amount = 0;
 
