@@ -117,19 +117,21 @@ struct map_item *hashmap_search_and_remove(struct hashmap *hashmap, char *id, en
     int key = hash(id, hashmap->size);
     struct map_item *item = hashmap->buffer[key];
 
-    if (item && item->type == type && strcmp(item->id, id) == 0) {
-	hashmap->buffer[key] = item->next;
-	return item;
-    }
-    
-    while (item->next) {
-	struct map_item *next = item->next;
+    if (item) {
+	if (item->type == type && strcmp(item->id, id) == 0) {
+	    hashmap->buffer[key] = item->next;
+	    return item;
+	}
 	
-	if (next->type == type && strcmp(next->id, id) == 0) {
-	    item->next = next->next;
-	    return next;
-	} else
-	    item = next;
+	while (item->next) {
+	    struct map_item *next = item->next;
+	    
+	    if (next->type == type && strcmp(next->id, id) == 0) {
+		item->next = next->next;
+		return next;
+	    } else
+		item = next;
+	}
     }
 
     return NULL;
@@ -139,20 +141,22 @@ struct map_item *hashmap_search_with_sub_and_remove(struct hashmap *hashmap, cha
     int key = hash(id, hashmap->size);
     struct map_item *item = hashmap->buffer[key];
 
-    if (item && item->type == type && item->subvalue == sub && strcmp(item->id, id) == 0) {
-	hashmap->buffer[key] = item->next;
-	return item;
-    }
-    
-    while (item->next) {
-	struct map_item *next = item->next;
-
-	if (next->type == type && next->subvalue == sub && strcmp(next->id, id) == 0) {
-	    item->next = next->next;
-	    return next;
+    if (item) {
+	if (item->type == type && item->subvalue == sub && strcmp(item->id, id) == 0) {
+	    hashmap->buffer[key] = item->next;
+	    return item;
 	}
-	else
-	    item = next;
+	
+	while (item->next) {
+	    struct map_item *next = item->next;
+	    
+	    if (next->type == type && next->subvalue == sub && strcmp(next->id, id) == 0) {
+		item->next = next->next;
+		return next;
+	    }
+	    else
+		item = next;
+	}
     }
 
     return NULL;
