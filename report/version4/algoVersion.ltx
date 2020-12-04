@@ -14,7 +14,94 @@
 \definecolor{gray}{rgb}{0.5,0.5,0.5}
 \definecolor{mauve}{rgb}{0.58,0,0.82}
 
+
+
 \begin{document}
+
+
+
+\begin{algorithm}
+\renewcommand{\thealgorithm}{}
+\floatname{algorithm}{}
+\caption{getDiagnosticator(behavioralAutomaton)}
+\begin{algorithmic}[1]
+\STATE \COMMENT {Ricordandoci che exp è una lista di transizioni: le transizioni rimaste dopo il calcolo di diagnosis.}
+\STATE $sAutomaton \leftarrow silentSpace(bAutomaton)$
+\STATE $sStates \leftarrow states[sAutomaton]$
+\WHILE {$sStates \neq NIL$}
+\STATE $closure \leftarrow value[sStates]$
+\STATE $updateFinalClosureStates(closure)$
+\STATE $exp \leftarrow diagnosis(closure,TRUE)$
+\STATE $clRegexp \leftarrow NIL$
+\STATE $initialized \leftarrow FALSE$
+\WHILE {$exp \neq NIL$}
+\STATE $UnifyTransitionsWithSameExprScrState(sStates,exp)$
+\STATE $updateClRegex(sStates,exp,clRegex,inizialized)$
+\STATE $exp \leftarrow next[exp]$
+\ENDWHILE
+\IF {$clRegexp \neq NIL $}
+\STATE $delta[sState \leftarrow id[clRegexp]]$
+\ENDIF
+\STATE $sStates \leftarrow next[sStates]$
+\ENDWHILE
+\RETURN $sAutomaton$
+\end{algorithmic}
+\end{algorithm}
+
+
+\begin{algorithm}
+\renewcommand{\thealgorithm}{}
+\floatname{algorithm}{}
+\caption{updateClRegex(sStates,exp,clRegex,inizialized)}
+\begin{algorithmic}[1]
+\STATE $srcState \leftarrow value[exp]$
+\IF {$final[srcState] = TRUE$}
+\STATE $final[sStates] \leftarrow TRUE$
+\IF{$initialized = TRUE$}
+\STATE $lab \leftarrow alternateLabel(clRegexp,rel[exp])$
+\STATE $clRegexp \leftarrow lab$
+\ELSE 
+\STATE $clRegexp \leftarrow rel[exp]$
+\RETURN $initialized \leftarrow TRUE$
+\ENDIF
+\ENDIF 
+\end{algorithmic}
+\end{algorithm}
+
+
+
+\begin{algorithm}
+\renewcommand{\thealgorithm}{}
+\floatname{algorithm}{}
+\caption{UnifyTransitionsWithSameExprScrState(sStates,exp)}
+\begin{algorithmic}[1]
+\STATE $transitionsOut \leftarrow trOut[sStates]$
+\WHILE {$transitionsOut \neq NIL$}
+\IF {$value[exp] = value[transitionsOut]$}
+\STATE $rel[transitionsOut] \leftarrow concatenateLabels(rel[exp],rel[transitionsOut])$
+\ENDIF
+\STATE $tranitionsOut \leftarrow next[transitionsOut]$
+\ENDWHILE
+\end{algorithmic}
+\end{algorithm}
+
+
+\begin{algorithm}
+\renewcommand{\thealgorithm}{}
+\floatname{algorithm}{}
+\caption{updateFinalClosureStates(closure)}
+\begin{algorithmic}[1]
+\STATE $closureStates \leftarrow states[closure]$
+\WHILE {$cStates \neq NIL$}
+\IF {$exit[closureStates] = TRUE$}
+\STATE $final[closureStates] \leftarrow TRUE $
+\ENDIF
+\STATE $closureStates \leftarrow next[closureStates]$
+\ENDWHILE 
+\end{algorithmic}
+\end{algorithm}
+
+
 \begin{algorithm}
 \renewcommand{\thealgorithm}{}
 \floatname{algorithm}{}
@@ -27,7 +114,6 @@
 \RETURN $sAutomaton$
 \end{algorithmic}
 \end{algorithm}
-
 
 
 \begin{algorithm}
@@ -109,6 +195,7 @@ la chiusura silenzionsa punterà alla chiusura relativa a quello stato}
 \floatname{algorithm}{}
 \caption{addTransitionsInSilentSpace(behavioralAutomaton,closureStatesHashMap,sAutomaton)}
 \begin{algorithmic}[1]
+\STATE \COMMENT {Le transizioni della rete comportamentale aggiunte sono quelle tra una chiusura silenziosa ed un altra: nell'attributo value della transizione aggiunta troviamo lo stato sorgente della transizione selezionata}
 \STATE $bTransitions \leftarrow tail(transitions[behavioralAutomaton])$
 \WHILE {$ bTransitions \neq NIL$}
 \IF {$obs[bTransitions] \neq NIL$}
@@ -121,7 +208,8 @@ la chiusura silenzionsa punterà alla chiusura relativa a quello stato}
 \STATE $item \leftarrow hashMapSearch(closureStatesHashMap,lookup)$
 \IF {$item \neq NIL$}
 \STATE $src \leftarrow value[item]$
-\STATE $connectTwoStates(sAutomaton,src,dest)$ 
+\STATE $newTransition \leftarrow connectTwoStates(sAutomaton,src,dest)$
+\STATE $value[newTransition] \leftarrow src[bTransitions]$
 \ENDIF
 \STATE $sStates \leftarrow prev[sStates]$
 \ENDWHILE
