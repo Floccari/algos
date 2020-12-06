@@ -268,7 +268,7 @@ void prune(struct network *net) {
     while (l) {
 	struct state *st = (struct state *) l->value;
 
-	if (st->color == WHITE) {
+	if (st->color == WHITE && aut->initial != st) {
 
 	    /*** save pointer to next state ***/
 	    l = l->next;

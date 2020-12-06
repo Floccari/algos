@@ -444,6 +444,7 @@ void network_print_subs(FILE *fc, struct network *net, struct network *comp_net,
 
     /*** legend ***/
     struct list *l = get_last(net->automatons);
+    fprintf(fc, "\t");
 
     while (l) {
 	struct automaton *aut = (struct automaton *) l->value;
@@ -477,7 +478,7 @@ void network_print_subs(FILE *fc, struct network *net, struct network *comp_net,
     while (l) {
 	struct state *st = (struct state *) l->value;
 
-	fprintf(fc, "# %s: ", st->id);
+	fprintf(fc, "# %s:\t", st->id);
 
 	struct context *c = (struct context *) st->value;
 
@@ -602,19 +603,35 @@ struct label *label_cat_create(struct label *lab1, struct label *lab2) {
     int l1 = (lab1) ? strlen(lab1->id) : 0;
     int l2 = (lab2) ? strlen(lab2->id) : 0;
 
+    int extra1 = (lab1 && strchr(lab1->id, '|')) ? 2 : 0;
+    int extra2 = (lab2 && strchr(lab2->id, '|')) ? 2 : 0;    
+
     if (l1 + l2 > 0) {
-	char *id = calloc(l1 + l2 + 1, sizeof (char));
+	char *id = calloc(l1 + l2 + extra1 + extra2 + 1, sizeof (char));
 	char *p = id;
+
+	if (extra1)
+	    *p++ = '(';
 
 	if (lab1)
 	    strcpy(p, lab1->id);
 
 	p += l1;
 
+	if (extra1)
+	    *p++ = ')';
+
+	if (extra2)
+	    *p++ = '(';
+
 	if (lab2)
 	    strcpy(p, lab2->id);
 
 	p += l2;
+
+	if (extra2)
+	    *p++ = ')';
+	
 	*p++ = '\0';
 
 	return label_create(id, RELEVANCE);
@@ -757,7 +774,7 @@ struct label *label_alt_create(struct label *lab1, struct label *lab2) {
 	if (lab2) {
 	    if (lab1) {
 		strcpy(p, lab2->id);
-		p += l2;			
+		p += l2;
 	    } else {
 		*p++ = '(';
 		strcpy(p, lab2->id);
@@ -782,16 +799,24 @@ struct label *label_cat_auto_create(struct label *lab1, struct label *lab_auto, 
     int l_auto = (lab_auto) ? strlen(lab_auto->id) : 0;
 
     int extra = (lab_auto) ? 3 : 0;
+    int extra1 = (lab1 && strchr(lab1->id, '|')) ? 2 : 0;
+    int extra2 = (lab2 && strchr(lab2->id, '|')) ? 2 : 0;    
 
     if (l1 + l2 + l_auto > 0) {
-	char *id = calloc(l1 + l2 + l_auto + extra + 1, sizeof (char));
+	char *id = calloc(l1 + l2 + l_auto + extra + extra1 + extra2 + 1, sizeof (char));
 	char *p = id;
-			
+
+	if (extra1)
+	    *p++ = '(';
+	
 	if (lab1)
 	    strcpy(p, lab1->id);
 			
 	p += l1;
-			
+
+	if (extra1)
+	    *p++ = ')';
+	
 	if (lab_auto) {
 	    *p++ = '(';
 	    strcpy(p, lab_auto->id);
@@ -800,11 +825,18 @@ struct label *label_cat_auto_create(struct label *lab1, struct label *lab_auto, 
 	    *p++ = ')';
 	    *p++ = '*';
 	}
-			
+
+	if (extra2)
+	    *p++ = '(';
+	
 	if (lab2)
 	    strcpy(p, lab2->id);
 			
 	p += l2;
+
+	if (extra2)
+	    *p++ = ')';
+	
 	*p++ = '\0';
 
 	return label_create(id, RELEVANCE);
