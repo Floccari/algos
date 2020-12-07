@@ -31,7 +31,7 @@ int size;
 struct map_item *item = NULL;
 struct hashmap *hashmap;
 
-#define SYMBOL_TABLE_SIZE 1000
+#define SYMBOL_TABLE_SIZE 2000
 
 %}
 

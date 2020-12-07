@@ -325,6 +325,9 @@ void network_serialize(FILE *fc, struct network *net) {
 
     while(l) {
 	struct automaton *aut = (struct automaton *) l->value;
+	long st_amount = 0;
+	long tr_amount = 0;
+
 	fprintf(fc, "\n");
 	fprintf(fc, "automaton %s:\n", aut->id);
 	fprintf(fc, "\tstates: ");
@@ -334,6 +337,7 @@ void network_serialize(FILE *fc, struct network *net) {
 
 	if (ls) {
 	    struct state *s = (struct state *) ls->value;
+	    st_amount++;
 
 	    if (s->final)
 		fprintf(fc, "[%s]", s->id);
@@ -347,6 +351,7 @@ void network_serialize(FILE *fc, struct network *net) {
     
 	    while (ls) {
 		struct state *s = (struct state *) ls->value;
+		st_amount++;
 		
 		if (s->final)
 		    fprintf(fc, ", [%s]", s->id);
@@ -372,6 +377,8 @@ void network_serialize(FILE *fc, struct network *net) {
 
 	while (ls) {
 	    struct transition *tr = (struct transition *) ls->value;
+	    tr_amount++;
+	    
 	    fprintf(fc, "\t%s %s -> %s", tr->id, tr->src->id, tr->dest->id);
 
 	    if (tr->obs)
@@ -410,7 +417,7 @@ void network_serialize(FILE *fc, struct network *net) {
 	    ls = ls->prev;
 	}
 
-	fprintf(fc, "end\n");
+	fprintf(fc, "end\t# states: %li, transitions: %li\n", st_amount, tr_amount);
 
 	l = l->prev;
     }
