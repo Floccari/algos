@@ -394,6 +394,7 @@ struct automaton *get_silent(struct state *st, int bspace_st_amount) {
 
     /*** create new silent state and insert it ***/
     struct state *s_st = state_create(st->id);
+    s_st->final = st->final;
 
     state_attach(s_aut, s_st);
     s_aut->initial = s_st;
