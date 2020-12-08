@@ -124,7 +124,6 @@ char *diagnosticate(struct automaton *dctor, struct list *observation) {
 	struct label *lab = (struct label *) l->value;
 
 	struct hashmap *new_hashmap = hashmap_create(sam);
-	bool empty = true;
 	
 	/*** foreach state in s_hashmap ***/
 	for (int i = 0; i < s_hashmap->size; i++) {
@@ -140,24 +139,24 @@ char *diagnosticate(struct automaton *dctor, struct list *observation) {
 			struct transition *tr = (struct transition *) lt->value;
 
 			if (strcmp(tr->obs->id, lab->id) == 0) {
-			    empty = false;
-			    
-			    struct label *new_lab = label_cat_create((struct label *) st->value, tr->rel);
+			    struct label *new_lab = label_cat_create((struct label *) item->subvalue, tr->rel);
 			    struct state *dest = tr->dest;
 
 			    /*** search in new_hashmap ***/
 			    struct map_item *s_item = hashmap_search(new_hashmap, dest->id, STATE);
 
 			    if (s_item) {
-				/*** update existing state ***/
-				struct state *s = (struct state *) item->value;
+				/*** update existing item ***/
+				struct label *lb = label_alt_create((struct label *) s_item->subvalue, new_lab);
 
-				s->value = label_alt_create((struct label *) s->value, new_lab);
+				if (s_item->subvalue)
+				    label_destroy(s_item->subvalue);
+
+				s_item->subvalue = lb;
 			    } else {
-				dest->value = new_lab;
 				/*** insert state ***/
 				hashmap_insert(new_hashmap,
-					       map_item_create(dest->id, STATE, dest));
+					       map_item_create_with_sub(dest->id, STATE, dest, new_lab));
 			    }
 			}
 
@@ -173,9 +172,7 @@ char *diagnosticate(struct automaton *dctor, struct list *observation) {
 	struct hashmap *tmp = s_hashmap;
 	s_hashmap = new_hashmap;
 	
-	if (!empty)
-	    hashmap_empty(tmp, false);
-
+	hashmap_empty(tmp, false);
 	hashmap_destroy(tmp);
 
 	if (stop) {
@@ -205,14 +202,15 @@ char *diagnosticate(struct automaton *dctor, struct list *observation) {
 		if (st->final) {
 		    if (initialized) {
 			struct label *l = label_alt_create(diagnosis,
-							   label_cat_create((struct label *) st->value, lab));
+							   label_cat_create((struct label *) item->subvalue,
+									    lab));
 			
 			if (diagnosis)
 			    label_destroy(diagnosis);
 
 			diagnosis = l;
 		    } else {
-			diagnosis = label_cat_create((struct label *) st->value, lab);
+			diagnosis = label_cat_create((struct label *) item->subvalue, lab);
 			initialized = true;
 		    }
 		}

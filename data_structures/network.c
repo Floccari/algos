@@ -607,44 +607,46 @@ char *univ_tr_id_create(long index) {
 }
 
 struct label *label_cat_create(struct label *lab1, struct label *lab2) {
-    int l1 = (lab1) ? strlen(lab1->id) : 0;
-    int l2 = (lab2) ? strlen(lab2->id) : 0;
-
-    int extra1 = (lab1 && strchr(lab1->id, '|')) ? 2 : 0;
-    int extra2 = (lab2 && strchr(lab2->id, '|')) ? 2 : 0;    
-
-    if (l1 + l2 > 0) {
-	char *id = calloc(l1 + l2 + extra1 + extra2 + 1, sizeof (char));
-	char *p = id;
-
-	if (extra1)
-	    *p++ = '(';
-
-	if (lab1)
-	    strcpy(p, lab1->id);
-
-	p += l1;
-
-	if (extra1)
-	    *p++ = ')';
-
-	if (extra2)
-	    *p++ = '(';
-
-	if (lab2)
-	    strcpy(p, lab2->id);
-
-	p += l2;
-
-	if (extra2)
-	    *p++ = ')';
-	
-	*p++ = '\0';
-
-	return label_create(id, RELEVANCE);
+    if (lab1) {
+	if (!lab2)
+	    return label_copy(lab1);
+    } else {
+	if (!lab2)
+	    return NULL;
+	else
+	    return label_copy(lab2);
     }
+    
+    int l1 = strlen(lab1->id);
+    int l2 = strlen(lab2->id);
 
-    return NULL;
+    int extra1 = strchr(lab1->id, '|') ? 2 : 0;
+    int extra2 = strchr(lab2->id, '|') ? 2 : 0;    
+
+    char *id = calloc(l1 + l2 + extra1 + extra2 + 1, sizeof (char));
+    char *p = id;
+
+    if (extra1)
+	*p++ = '(';
+
+    strcpy(p, lab1->id);
+    p += l1;
+
+    if (extra1)
+	*p++ = ')';
+
+    if (extra2)
+	*p++ = '(';
+
+    strcpy(p, lab2->id);
+    p += l2;
+
+    if (extra2)
+	*p++ = ')';
+	
+    *p++ = '\0';
+
+    return label_create(id, RELEVANCE);
 }
 
 struct label *label_alt_create(struct label *lab1, struct label *lab2) {
@@ -801,55 +803,52 @@ struct label *label_alt_create(struct label *lab1, struct label *lab2) {
 }    
 
 struct label *label_cat_auto_create(struct label *lab1, struct label *lab_auto, struct label *lab2) {
+    if (!lab_auto)
+	return label_cat_create(lab1, lab2);
+    
     int l1 = (lab1) ? strlen(lab1->id) : 0;
     int l2 = (lab2) ? strlen(lab2->id) : 0;
-    int l_auto = (lab_auto) ? strlen(lab_auto->id) : 0;
+    int l_auto = strlen(lab_auto->id);
 
-    int extra = (lab_auto) ? 3 : 0;
+    int extra = 3;
     int extra1 = (lab1 && strchr(lab1->id, '|')) ? 2 : 0;
     int extra2 = (lab2 && strchr(lab2->id, '|')) ? 2 : 0;    
 
-    if (l1 + l2 + l_auto > 0) {
-	char *id = calloc(l1 + l2 + l_auto + extra + extra1 + extra2 + 1, sizeof (char));
-	char *p = id;
-
-	if (extra1)
-	    *p++ = '(';
-	
-	if (lab1)
-	    strcpy(p, lab1->id);
-			
-	p += l1;
-
-	if (extra1)
-	    *p++ = ')';
-	
-	if (lab_auto) {
-	    *p++ = '(';
-	    strcpy(p, lab_auto->id);
-			    
-	    p += l_auto;
-	    *p++ = ')';
-	    *p++ = '*';
-	}
-
-	if (extra2)
-	    *p++ = '(';
-	
-	if (lab2)
-	    strcpy(p, lab2->id);
-			
-	p += l2;
-
-	if (extra2)
-	    *p++ = ')';
-	
-	*p++ = '\0';
-
-	return label_create(id, RELEVANCE);
-    }
-
-    return NULL;
+    char *id = calloc(l1 + l2 + l_auto + extra + extra1 + extra2 + 1, sizeof (char));
+    char *p = id;
+    
+    if (extra1)
+	*p++ = '(';
+    
+    if (lab1)
+	strcpy(p, lab1->id);
+    
+    p += l1;
+    
+    if (extra1)
+	*p++ = ')';
+    
+    *p++ = '(';
+    strcpy(p, lab_auto->id);
+    
+    p += l_auto;
+    *p++ = ')';
+    *p++ = '*';
+    
+    if (extra2)
+	*p++ = '(';
+    
+    if (lab2)
+	strcpy(p, lab2->id);
+    
+    p += l2;
+    
+    if (extra2)
+	*p++ = ')';
+    
+    *p++ = '\0';
+    
+    return label_create(id, RELEVANCE);
 }
 
 int maximum_state_amount(struct network *net) {
