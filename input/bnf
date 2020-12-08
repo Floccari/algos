@@ -1,29 +1,29 @@
 program -> net-decl aut-decl observation
 net-decl -> network id: aut-list ev-list link-list end
 aut-list -> automatons: aut-id-list;
-aut-id-list -> aut-id, aut-id-list | aut-id
+aut-id-list -> aut-id-list, aut-id | aut-id
 aut-id -> id
 ev-list -> events: ev-id-list; | eps
-ev-id-list -> ev-id, ev-id-list | ev-id
+ev-id-list -> ev-id-list, ev-id | ev-id
 ev-id -> id
-link-list -> link link-list | eps
+link-list -> link-list link | eps
 link -> id id -> id;
-aut-decl -> aut aut-decl | aut
+aut-decl -> aut-decl aut | aut
 aut -> automaton id: st-list init tr-list end
 st-list -> states: st-id-list;
-st-id-list -> st, st-id-list | st
+st-id-list -> st-id-list, st | st
 st -> id regexp | [ id ] regexp
 regexp -> " diag " | eps
 init -> initial: id;
-tr-list -> tr tr-list | eps
+tr-list -> tr-list tr | eps
 tr -> id id -> id obs-decl rel-decl in-decl out-decl;
 obs-decl -> obs " id " | eps
 rel-decl -> rel " id " | eps
 in-decl -> in " action-in " | eps
 action-in -> id [ id ]
 out-decl -> out " action-list " | eps
-action-list -> action-out, action-list | action-out
+action-list -> action-list, action-out | action-out
 action-out -> id [ id ]
 observation -> obs: obs-label-list; | eps
-obs-label-list -> obs-label, obs-label-list | obs-label
+obs-label-list -> obs-label-list, obs-label | obs-label
 obs-label -> id

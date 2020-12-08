@@ -31,7 +31,7 @@ int size;
 struct map_item *item = NULL;
 struct hashmap *hashmap;
 
-#define SYMBOL_TABLE_SIZE 2000
+#define SYMBOL_TABLE_SIZE 1000
 
 %}
 
@@ -53,7 +53,7 @@ net-decl : NETWORK ID {net = network_create(lexval);
 aut-list : AUTS ':' aut-id-list ';'
 	 ;
 
-aut-id-list : aut-id ',' aut-id-list
+aut-id-list : aut-id-list ',' aut-id
 	    | aut-id
       	    ;
 
@@ -79,7 +79,7 @@ ev-list : EVS ':' ev-id-list ';'
 	| {/* eps */}
 	;
 
-ev-id-list : ev-id ',' ev-id-list
+ev-id-list : ev-id-list ',' ev-id
 	   | ev-id
 	   ;
 
@@ -97,7 +97,7 @@ ev-id : ID {item = hashmap_search(hashmap, lexval, EVENT);
       ;
 
 
-link-list : link link-list
+link-list : link-list link
 	  | {/* eps */}
 	  ;
 
@@ -142,7 +142,7 @@ link : ID {item = hashmap_search(hashmap, lexval, LINK);
        ';'
      ;
 
-aut-decl : aut aut-decl
+aut-decl : aut-decl aut
 	 | aut
 	 ;
 
@@ -205,7 +205,7 @@ aut : AUT ID {item = hashmap_search(hashmap, lexval, AUTOMATON);
 st-list : STS ':' st-id-list ';'
 	;
 
-st-id-list : st ',' st-id-list
+st-id-list : st-id-list ',' st
 	   | st
 	   ;
 
@@ -260,7 +260,7 @@ init : INIT ':' ID {item = hashmap_search_with_sub(hashmap, lexval, STATE, aut);
        ';' 
      ;
 
-tr-list : tr tr-list
+tr-list : tr-list tr
 	| {/* eps */}
 	;
 
@@ -386,13 +386,11 @@ out-decl : OUT '"' action-list '"'
 	 | {/* eps */}
 	 ;
 
-action-list : action-out {// act initialized in $1
-                          struct list *l = list_create(act);
-
-			  // tr initialized in rule "tr"
-			  tr->act_out = head_insert(tr->act_out, l);}
-
-	      ',' action-list
+action-list : action-list ',' action-out {// act initialized in $1
+                                          struct list *l = list_create(act);
+					  
+					  // tr initialized in rule "tr"
+					  tr->act_out = head_insert(tr->act_out, l);}
 
 	    | action-out {// act initialized in $1
 	      	          struct list *l = list_create(act);
@@ -428,7 +426,7 @@ observation : OBS ':' obs-label-list ';'
 	    | {/* eps */}
 	    ;
 
-obs-label-list : obs-label ',' obs-label-list
+obs-label-list : obs-label-list ',' obs-label
 	       | obs-label
 	       ;
 
