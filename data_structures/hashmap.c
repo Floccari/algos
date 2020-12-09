@@ -24,6 +24,11 @@ struct hashmap *hashmap_create(int size) {
 //    memset(item, 0, sizeof (struct hashmap));
 
     hashmap->buffer = calloc(size, sizeof (struct map_item *));
+
+    if (!hashmap->buffer) {
+	fprintf(stderr, "memory allocation failed during hashmap creation, exiting...\n");
+	exit(-1);
+    }
     memset(hashmap->buffer, 0, sizeof (struct map_item *) * size);
     hashmap->size = size;
 

@@ -29,15 +29,7 @@ struct network *bspace_compute(struct network *net) {
 struct network *compute(struct network *net, bool comp) {
     /*** compute the maximum amount of contexts ***/
     int sam = maximum_state_amount(net);
-    int evam = item_amount(net->events) + 1;
-
-    int ct_amount;
-
-    if (comp) {
-	int obsam = item_amount(net->observation) + 1;
-	ct_amount = pow(sam, net->aut_amount) * pow(evam, net->lk_amount) * obsam;
-    } else
-	ct_amount = pow(sam, net->aut_amount) * pow(evam, net->lk_amount);
+    int ct_amount = pow(sam, net->aut_amount) * net->lk_amount;
     
     ct_hashmap = hashmap_create(ct_amount);
 
