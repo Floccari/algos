@@ -22,86 +22,94 @@ struct automaton *get_diagnosticator(struct automaton *bspace_aut) {
 
     struct list *l = sspace_aut->states;
 
-    /*** foreach sspace state (closure) ***/
-    while (l) {
-	struct state *st = (struct state *) l->value;
-	struct automaton *closure = (struct automaton *) st->value;
+    if (!stop) {
+	/*** foreach sspace state (closure) ***/
+	while (l) {
+	    struct state *st = (struct state *) l->value;
+	    struct automaton *closure = (struct automaton *) st->value;
 
-	struct list *ls = closure->states;
+	    struct list *ls = closure->states;
 	
-	/*** mark exit silent states as finals ***/
-	/*** bspace states remain unaltered ***/
-	while (ls) {
-	    struct state *s_st = (struct state *) ls->value;
+	    /*** mark exit silent states as finals ***/
+	    /*** bspace states remain unaltered ***/
+	    while (ls) {
+		struct state *s_st = (struct state *) ls->value;
 
-	    if (s_st->exit)
-		s_st->final = true;
+		if (s_st->exit)
+		    s_st->final = true;
 		
-	    ls = ls->next;
-	}
-
-	/*** compute the split regexp ***/
-	struct list *exp = get_split_diag(closure);
-	
-	if (!stop) {
-	    struct label *cl_regexp = NULL;
-	    bool initialized = false;
-
-	    /*** foreach expression ***/
-	    while (exp) {
-		struct transition *tr = (struct transition *) exp->value;
-
-		struct list *lt = st->tr_out;
-	    
-		/*** foreach outgoing transition ***/
-		while (lt) {
-		    struct transition *ts = (struct transition *) lt->value;
-
-		    /*** if this transition was generated from this exit state ***/
-		    if (ts->value == tr->value) {
-
-			/*** concatenate regexp with ts->rel ***/
-			ts->rel = label_cat_create(tr->rel, ts->rel);
-		    }
-
-		    lt = lt->next;
-		}
-	    
-		struct state *bs = (struct state *) tr->value;
-	
-		/*** if this state is final (not exit) ***/
-		/*** we know because bs is a bspace state (unaltered) ***/
-		if (bs->final) {
-
-		    /*** set sspace state (closure) as final ***/
-		    st->final = true;
-		
-		    /*** build the appropriate label ***/
-		    if (initialized) {
-			struct label *lab = label_alt_create(cl_regexp, tr->rel);
-
-			if (cl_regexp && cl_regexp != lab)
-			    label_destroy(cl_regexp);
-
-			cl_regexp = lab;
-		    } else {
-			cl_regexp = label_copy(tr->rel);
-			initialized = true;
-		    }
-		}
-
-		exp = exp->next;
+		ls = ls->next;
 	    }
 
-	    /*** assign cl_regexp to st ***/
-	    if (cl_regexp)
-		st->delta = cl_regexp->id;
-	}
-
-	if (stop)
-	    break;
+	    /*** compute the split regexp ***/
+	    struct list *exp = get_split_diag(closure);
 	
-	l = l->next;
+	    if (!stop) {
+		struct label *cl_regexp = NULL;
+		bool initialized = false;
+
+		/*** foreach expression ***/
+		while (exp) {
+		    struct transition *tr = (struct transition *) exp->value;
+
+		    struct list *lt = st->tr_out;
+	    
+		    /*** foreach outgoing transition ***/
+		    while (lt) {
+			struct transition *ts = (struct transition *) lt->value;
+
+			/*** if this transition was generated from this exit state ***/
+			if (ts->value == tr->value) {
+
+			    /*** concatenate regexp with ts->rel ***/
+			    ts->rel = label_cat_create(tr->rel, ts->rel);
+			}
+
+			if (stop)
+			    break;
+
+			lt = lt->next;
+		    }
+	    
+		    struct state *bs = (struct state *) tr->value;
+	
+		    /*** if this state is final (not exit) ***/
+		    /*** we know because bs is a bspace state (unaltered) ***/
+		    if (bs->final) {
+
+			/*** set sspace state (closure) as final ***/
+			st->final = true;
+		
+			/*** build the appropriate label ***/
+			if (initialized) {
+			    struct label *lab = label_alt_create(cl_regexp, tr->rel);
+
+			    if (cl_regexp && cl_regexp != lab)
+				label_destroy(cl_regexp);
+
+			    cl_regexp = lab;
+			} else {
+			    cl_regexp = label_copy(tr->rel);
+			    initialized = true;
+			}
+		    }
+
+		    if (stop)
+			break;
+		    
+		    exp = exp->next;
+		}
+
+		/*** assign cl_regexp to st ***/
+		if (cl_regexp)
+		    st->delta = cl_regexp->id;
+	    }
+
+	    if (stop)
+		break;
+	
+	    l = l->next;
+	}
     }
 
     return sspace_aut;
@@ -160,8 +168,14 @@ char *diagnosticate(struct automaton *dctor, struct list *observation) {
 			    }
 			}
 
+			if (stop)
+			    break;
+
 			lt = lt->next;
 		    }
+
+		    if (stop)
+			break;
 		    
 		    item = item->next;
 		}
@@ -187,35 +201,37 @@ char *diagnosticate(struct automaton *dctor, struct list *observation) {
     struct label *diagnosis = NULL;
     bool initialized = false;
 
-    /*** foreach state in s_hashmap ***/
-    for (int i = 0; i < s_hashmap->size; i++) {
-	if (s_hashmap->buffer[i]) {
-	    struct map_item *item = s_hashmap->buffer[i];
+    if (!stop) {
+	/*** foreach state in s_hashmap ***/
+	for (int i = 0; i < s_hashmap->size; i++) {
+	    if (s_hashmap->buffer[i]) {
+		struct map_item *item = s_hashmap->buffer[i];
 	    
-	    while (item) {
-		struct state *st = item->value;
-		struct label *lab = NULL;
+		while (item) {
+		    struct state *st = item->value;
+		    struct label *lab = NULL;
 
-		if (st->delta)
-		    lab = label_create(st->delta, RELEVANCE);
+		    if (st->delta)
+			lab = label_create(st->delta, RELEVANCE);
 		
-		if (st->final) {
-		    if (initialized) {
-			struct label *l = label_alt_create(diagnosis,
-							   label_cat_create((struct label *) item->subvalue,
-									    lab));
+		    if (st->final) {
+			if (initialized) {
+			    struct label *l = label_alt_create(diagnosis,
+							       label_cat_create((struct label *) item->subvalue,
+										lab));
 			
-			if (diagnosis)
-			    label_destroy(diagnosis);
+			    if (diagnosis)
+				label_destroy(diagnosis);
 
-			diagnosis = l;
-		    } else {
-			diagnosis = label_cat_create((struct label *) item->subvalue, lab);
-			initialized = true;
+			    diagnosis = l;
+			} else {
+			    diagnosis = label_cat_create((struct label *) item->subvalue, lab);
+			    initialized = true;
+			}
 		    }
-		}
 			
-		item = item->next;
+		    item = item->next;
+		}
 	    }
 	}
     }
@@ -276,106 +292,126 @@ struct automaton *get_silent_space(struct automaton *bspace_aut) {
 	    s_st->value = closure;
 	}
 
+	if (stop)
+	    break;
+	
 	l = l->prev;
     }
 
     l = sspace_aut->states;
 
-    /*** foreach sspace state (closure) ***/
-    while (l) {
-	struct state *st = (struct state *) l->value;
-	struct automaton *closure = (struct automaton *) st->value;
+    if (!stop) {
+	/*** foreach sspace state (closure) ***/
+	while (l) {
+	    struct state *st = (struct state *) l->value;
+	    struct automaton *closure = (struct automaton *) st->value;
 	
-	struct list *ls = closure->states;
+	    struct list *ls = closure->states;
 
-	/*** foreach state in the closure ***/
-	while (ls) {
-	    struct state *s_st = (struct state *) ls->value;
+	    /*** foreach state in the closure ***/
+	    while (ls) {
+		struct state *s_st = (struct state *) ls->value;
 
-	    /*** add st to the hashmap ***/
-	    char *id = calloc(strlen(st->id) + strlen(s_st->id) + 2, sizeof (char));
-	    strcpy(id, st->id);
-
-	    char *p = id + strlen(st->id);
-	    *p++ = '#';
-	    *p++ = '\0';	
-	    
-	    strcat(id, s_st->id);
-
-	    hashmap_insert(s_hashmap,
-			   map_item_create(id, STATE, st));
-
-	    ls = ls->next;
-	}
-
-	l = l->next;
-    }
-
-    struct list *lt = get_last(bspace_aut->transitions);
-    tr_amount = 0;
-
-    /*** foreach observable bspace transition ***/
-    while (lt) {
-	struct transition *tr = lt->value;
-
-	if (tr->obs) {
-	    /*** build dest lookup id ***/
-	    char *id = calloc((2 * strlen(tr->dest->id)) + 2, sizeof (char));
-	    strcpy(id, tr->dest->id);
-
-	    char *p = id + strlen(tr->dest->id);
-	    *p++ = '#';
-	    *p++ = '\0';
-	    
-	    strcat(id, tr->dest->id);
-
-	    struct map_item *item = hashmap_search(s_hashmap, id, STATE);
-	    struct state *dest = (struct state *) item->value;
-
-	    /*** cleanup id ***/
-	    free(id);
-
-	    struct list *l = get_last(sspace_aut->states);
-
-	    /*** foreach sspace state (closure) ***/
-	    while (l) {
-		struct state *st = (struct state *) l->value;
-
-		/*** build src lookup id ***/
-		char *id = calloc(strlen(st->id) + strlen(tr->src->id) + 2, sizeof (char));
+		/*** add st to the hashmap ***/
+		char *id = calloc(strlen(st->id) + strlen(s_st->id) + 2, sizeof (char));
 		strcpy(id, st->id);
 
 		char *p = id + strlen(st->id);
 		*p++ = '#';
+		*p++ = '\0';	
+	    
+		strcat(id, s_st->id);
+
+		hashmap_insert(s_hashmap,
+			       map_item_create(id, STATE, st));
+
+		if (stop)
+		    break;
+
+		ls = ls->next;
+	    }
+
+	    if (stop)
+		break;
+
+	    l = l->next;
+	}
+    }
+
+    
+    struct list *lt = get_last(bspace_aut->transitions);
+    tr_amount = 0;
+
+    if (!stop) {
+	/*** foreach observable bspace transition ***/
+	while (lt) {
+	    struct transition *tr = lt->value;
+
+	    if (tr->obs) {
+		/*** build dest lookup id ***/
+		char *id = calloc((2 * strlen(tr->dest->id)) + 2, sizeof (char));
+		strcpy(id, tr->dest->id);
+
+		char *p = id + strlen(tr->dest->id);
+		*p++ = '#';
 		*p++ = '\0';
-		
-		strcat(id, tr->src->id);
+	    
+		strcat(id, tr->dest->id);
 
-		item = hashmap_search(s_hashmap, id, STATE);
+		struct map_item *item = hashmap_search(s_hashmap, id, STATE);
+		struct state *dest = (struct state *) item->value;
 
-		if (item) {
-		    struct state *src = (struct state *) item->value;
-		    
-		    /*** create the transition and attach it ***/
-		    struct transition *s_tr = transition_create(transition_id_create(tr_amount++));
-		    s_tr->src = src;
-		    s_tr->dest = dest;
-		    
-		    s_tr->obs = label_copy(tr->obs);
-		    s_tr->rel = label_copy(tr->rel);
-		    s_tr->value = tr->src;
-		    
-		    transition_attach(sspace_aut, s_tr);
-		}
-		    
 		/*** cleanup id ***/
 		free(id);
 
-		l = l->prev;
-	    }
-	}
+		struct list *l = get_last(sspace_aut->states);
 
-	lt = lt->prev;
+		/*** foreach sspace state (closure) ***/
+		while (l) {
+		    struct state *st = (struct state *) l->value;
+
+		    /*** build src lookup id ***/
+		    char *id = calloc(strlen(st->id) + strlen(tr->src->id) + 2, sizeof (char));
+		    strcpy(id, st->id);
+
+		    char *p = id + strlen(st->id);
+		    *p++ = '#';
+		    *p++ = '\0';
+		
+		    strcat(id, tr->src->id);
+
+		    item = hashmap_search(s_hashmap, id, STATE);
+
+		    if (item) {
+			struct state *src = (struct state *) item->value;
+		    
+			/*** create the transition and attach it ***/
+			struct transition *s_tr = transition_create(transition_id_create(tr_amount++));
+			s_tr->src = src;
+			s_tr->dest = dest;
+		    
+			s_tr->obs = label_copy(tr->obs);
+			s_tr->rel = label_copy(tr->rel);
+			s_tr->value = tr->src;
+		    
+			transition_attach(sspace_aut, s_tr);
+		    }
+		    
+		    /*** cleanup id ***/
+		    free(id);
+
+		    if (stop)
+			break;
+
+		    l = l->prev;
+		}
+	    }
+
+	    if (stop)
+		break;
+
+	    lt = lt->prev;
+	}
     }
 
     /*** cleanup ***/
@@ -404,19 +440,21 @@ struct automaton *get_silent(struct state *st, int bspace_st_amount) {
     s_st->value = st;    
 
     /*** recursive step ***/
-    silent_visit(st);
+    if (!stop)
+	silent_visit(st);
 
     /*** reset colors ***/
     struct list *l = visited;
-
-    while (l) {
-	struct state *s = (struct state *) l->value;
-	s->color = WHITE;
-
-	struct list *next = l->next;
-	free(l);
-	l = next;
-    }
+    
+    if (!stop)
+	while (l) {
+	    struct state *s = (struct state *) l->value;
+	    s->color = WHITE;
+	    
+	    struct list *next = l->next;
+	    free(l);
+	    l = next;
+	}
 
     return s_aut;
 }
@@ -460,7 +498,8 @@ void silent_visit(struct state *st) {
 		transition_attach(s_aut, s_tr);
 		
 		/*** visit next state ***/
-		silent_visit(next);
+		if (!stop)
+		    silent_visit(next);
 	    } else {
 		/*** silent state already exists ***/
 
@@ -478,6 +517,8 @@ void silent_visit(struct state *st) {
 	    s_st->exit = true;
 	}
 	
+	if (stop)
+	    break;
 	
 	l = l->next;
     }

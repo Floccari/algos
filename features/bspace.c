@@ -241,7 +241,13 @@ void step(struct state *current_bs_state) {
 
 	NEXT_TRANSITION:
 	    l = l->next;
+
+	    if (stop)
+		break;
 	}
+
+	if (stop)
+	    break;
     }
 
     // end
@@ -260,6 +266,9 @@ void prune(struct network *net) {
 	    dfs_visit(st);
 
 	l = l->next;
+
+	if (stop)
+	    break;
     }
 
     l = aut->states;
@@ -279,6 +288,9 @@ void prune(struct network *net) {
 	    free(st);
 	} else
 	    l = l->next;
+
+	if (stop)
+	    break;
     }
 }
 
@@ -292,9 +304,13 @@ void dfs_visit(struct state *source) {
 	struct state *next = tr->src;
 
 	if (next->color == WHITE)
-	    dfs_visit(next);
+	    if (!stop)
+		dfs_visit(next);
 
 	l = l->next;
+
+	if (stop)
+	    break;
     }
 
     source->color = BLACK;    // not really needed for now

@@ -143,6 +143,9 @@ bool multiple_tr(struct automaton *aut) {
 	    }
 	}
 
+	if (stop)
+	    return false;
+	
 	l = l->next;
     }
 
@@ -194,6 +197,9 @@ void phase_one(struct automaton *aut, bool split) {
 	    transition_attach(aut, tr);
 	} else
 	    l = l->next;
+
+	if (stop)
+	    return;
     }
 }
 
@@ -264,6 +270,9 @@ void phase_two(struct automaton *aut, bool split) {
 
 	    l = l->next;
 	}
+
+	if (stop)
+	    return;
     }
 
     /*** cleanup ***/
@@ -332,9 +341,15 @@ void phase_three(struct automaton *aut, bool split) {
 		    /*** attach the transition ***/
 		    transition_attach(aut, tr);
 		    
+		    if (stop)
+			break;
+
 		    lt_out = lt_out->next;
 		}
 
+		if (stop)
+		    break;
+		
 		lt_in = lt_in->next;
 	    }
 
@@ -345,6 +360,9 @@ void phase_three(struct automaton *aut, bool split) {
 	    free(st);
 	} else
 	    l = l->next;
+
+	if (stop)
+	    return;
     }
 }
 
