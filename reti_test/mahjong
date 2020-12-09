@@ -1,0 +1,339 @@
+network mahjong:
+	automatons: table, east, south, west, north;
+	events: turn, turn_p;
+
+	let east -> table;
+	lst south -> table;
+	lwt west -> table;
+	lnt north -> table;
+	
+	lte table -> east;
+	lts table -> south;
+	ltw table -> west;
+	ltn table -> north;
+end
+
+automaton table:
+	  states: init, run;
+	  initial: init;
+
+	  # init
+	  tinit init -> run out "turn[lte]";
+
+	  # normal order
+	  tes run -> run in "turn[let]" out "turn[lts]";
+	  tsw run -> run in "turn[lst]" out "turn[ltw]";
+	  twn run -> run in "turn[lwt]" out "turn[ltn]";
+	  tne run -> run in "turn[lnt]" out "turn[lte]";
+
+	  # perturbated order (pon, kan, ron)
+	  tser run -> run in "turn[lst]" out "turn_p[lte]";
+	  twer run -> run in "turn[lwt]" out "turn_p[lte]";
+	  tner run -> run in "turn[lnt]" out "turn_p[lte]";
+	  tesr run -> run in "turn[let]" out "turn_p[lts]";
+	  twsr run -> run in "turn[lwt]" out "turn_p[lts]";
+	  tnsr run -> run in "turn[lnt]" out "turn_p[lts]";
+	  tewr run -> run in "turn[let]" out "turn_p[ltw]";
+	  tswr run -> run in "turn[lst]" out "turn_p[ltw]";
+	  tnwr run -> run in "turn[lnt]" out "turn_p[ltw]";
+	  tenr run -> run in "turn[let]" out "turn_p[ltn]";
+	  tsnr run -> run in "turn[lst]" out "turn_p[ltn]";
+	  twnr run -> run in "turn[lwt]" out "turn_p[ltn]";
+
+	  # replay (pon, kan, chi)
+	  tep run -> run in "turn_p[let]" out "turn[lte]";
+	  tsp run -> run in "turn_p[lst]" out "turn[lts]";
+	  twp run -> run in "turn_p[lwt]" out "turn[ltw]";
+	  tnp run -> run in "turn_p[lnt]" out "turn[ltn]";
+end
+
+automaton east:
+	  states: init, 3_ten, 2_ten, 1_ten, ten, fin;
+	  initial: init;
+
+	  # pon
+	  tei2p init -> 2_ten obs "pon_E" rel "E2" in "turn_p[lte]" out "turn_p[let]";
+	  tei1p init -> 1_ten obs "pon_E" rel "E1" in "turn_p[lte]" out "turn_p[let]";
+	  teitp init -> ten obs "pon_E" rel "E0" in "turn_p[lte]" out "turn_p[let]";
+	  te22p 3_ten -> 2_ten obs "pon_E" rel "E2" in "turn_p[lte]" out "turn_p[let]";
+	  te21p 2_ten -> 1_ten obs "pon_E" rel "E1" in "turn_p[lte]" out "turn_p[let]";
+	  te1tp 1_ten -> ten obs "pon_E" rel "E0" in "turn_p[lte]" out "turn_p[let]";
+
+	  # kan
+	  teik init -> init obs "kan_E" in "turn_p[lte]" out "turn_p[let]";
+	  te3k 3_ten -> 3_ten obs "kan_E" in "turn_p[lte]" out "turn_p[let]";
+	  te2k 2_ten -> 2_ten obs "kan_E" in "turn_p[lte]" out "turn_p[let]";
+	  te1k 1_ten -> 1_ten obs "kan_E" in "turn_p[lte]" out "turn_p[let]";
+	  tetk ten -> ten obs "kan_E" in "turn_p[lte]" out "turn_p[let]";
+
+	  # ron
+	  teir init -> fin obs "ron_E" rel "E" in "turn_p[lte]";
+	  tetr ten -> fin obs "ron_E" rel "E" in "turn_p[lte]";
+
+	  # chi
+	  tei2c init -> 2_ten obs "chi" rel "E2" in "turn[lte]" out "turn_p[let]";
+	  tei1c init -> 1_ten obs "chi" rel "E1" in "turn[lte]" out "turn_p[let]";
+	  teitc init -> ten obs "chi" rel "E0" in "turn[lte]" out "turn_p[let]";
+	  te32c 3_ten -> 2_ten obs "chi" rel "E2" in "turn[lte]" out "turn_p[let]";
+	  te21c 2_ten -> 1_ten obs "chi" rel "E1" in "turn[lte]" out "turn_p[let]";
+	  te1tc 1_ten -> ten obs "chi" rel "E0" in "turn[lte]" out "turn_p[let]";
+
+	  # concealed kan
+	  teikc init -> init obs "kan_E" in "turn[lte]" out "turn_p[let]";
+	  te3kc 3_ten -> 3_ten obs "kan_E" in "turn[lte]" out "turn_p[let]";
+	  te2kc 2_ten -> 2_ten obs "kan_E" in "turn[lte]" out "turn_p[let]";
+	  te1kc 1_ten -> 1_ten obs "kan_E" in "turn[lte]" out "turn_p[let]";
+	  tetkc ten -> ten obs "kan_E" in "turn[lte]" out "turn_p[let]";
+
+	  # riichi
+	  teirn init -> ten obs "riichi" rel "E0" in "turn[lte]" out "turn[let]";
+	  te1rn 1_ten -> ten obs "riichi" rel "E0" in "turn[lte]" out "turn[let]";
+	  tetrn ten -> ten obs "riichi" in "turn[lte]" out "turn[let]";
+
+	  # tsumo
+	  teits init -> fin obs "tsumo" rel "E" in "turn[lte]";
+	  tetts ten -> fin obs "tsumo" rel "E" in "turn[lte]";
+
+	  # init
+	  tei3d init -> 3_ten obs "discard" in "turn[lte]" out "turn[let]";
+	  tei2k init -> 2_ten obs "keep" rel "E2" in "turn[lte]" out "turn[let]";
+	  tei2d init -> 2_ten obs "discard" in "turn[lte]" out "turn[let]";
+	  tei1k init -> 1_ten obs "keep" rel "E1" in "turn[lte]" out "turn[let]";
+	  tei1d init -> 1_ten obs "discard" in "turn[lte]" out "turn[let]";
+	  teitk init -> ten obs "keep" rel "E0" in "turn[lte]" out "turn[let]";
+	  teitd init -> ten obs "discard" in "turn[lte]" out "turn[let]";
+
+	  # 3_ten
+	  te32k 3_ten -> 2_ten obs "keep" rel "E2" in "turn[lte]" out "turn[let]";
+	  te33d 3_ten -> 3_ten obs "discard" in "turn[lte]" out "turn[let]";
+
+	  # 2_ten
+	  te21k 2_ten -> 1_ten obs "keep" rel "E1" in "turn[lte]" out "turn[let]";
+	  te22d 2_ten -> 2_ten obs "discard" in "turn[lte]" out "turn[let]";
+
+	  # 1_ten
+	  te1tk 1_ten -> ten obs "keep" rel "E0" in "turn[lte]" out "turn[let]";
+	  te11d 1_ten -> 1_ten obs "discard" in "turn[lte]" out "turn[let]";
+
+	  # ten
+	  tett ten -> ten obs "discard" in "turn[lte]" out "turn[let]";
+end
+
+automaton south:
+	  states: init, 3_ten, 2_ten, 1_ten, ten, fin;
+	  initial: init;
+
+	  # pon
+	  tsi2p init -> 2_ten obs "pon_S" rel "S2" in "turn_p[lts]" out "turn_p[lst]";
+	  tsi1p init -> 1_ten obs "pon_S" rel "S1" in "turn_p[lts]" out "turn_p[lst]";
+	  tsitp init -> ten obs "pon_S" rel "S0" in "turn_p[lts]" out "turn_p[lst]";
+	  ts22p 3_ten -> 2_ten obs "pon_S" rel "S2" in "turn_p[lts]" out "turn_p[lst]";
+	  ts21p 2_ten -> 1_ten obs "pon_S" rel "S1" in "turn_p[lts]" out "turn_p[lst]";
+	  ts1tp 1_ten -> ten obs "pon_S" rel "S0" in "turn_p[lts]" out "turn_p[lst]";
+
+	  # kan
+	  tsik init -> init obs "kan_S" in "turn_p[lts]" out "turn_p[lst]";
+	  ts3k 3_ten -> 3_ten obs "kan_S" in "turn_p[lts]" out "turn_p[lst]";
+	  ts2k 2_ten -> 2_ten obs "kan_S" in "turn_p[lts]" out "turn_p[lst]";
+	  ts1k 1_ten -> 1_ten obs "kan_S" in "turn_p[lts]" out "turn_p[lst]";
+	  tstk ten -> ten obs "kan_S" in "turn_p[lts]" out "turn_p[lst]";
+
+	  # ron
+	  tsir init -> fin obs "ron_S" rel "S" in "turn_p[lts]";
+	  tstr ten -> fin obs "ron_S" rel "S" in "turn_p[lts]";
+
+	  # chi
+	  tsi2c init -> 2_ten obs "chi" rel "S2" in "turn[lts]" out "turn_p[lst]";
+	  ts32c 3_ten -> 2_ten obs "chi" rel "S2" in "turn[lts]" out "turn_p[lst]";
+	  ts21c 2_ten -> 1_ten obs "chi" rel "S1" in "turn[lts]" out "turn_p[lst]";
+	  ts1tc 1_ten -> ten obs "chi" rel "S0" in "turn[lts]" out "turn_p[lst]";
+
+	  # concealed kan
+	  tsikc init -> init obs "kan_S" in "turn[lts]" out "turn_p[lst]";
+	  tsi1c init -> 1_ten obs "chi" rel "S1" in "turn[lts]" out "turn_p[lst]";
+	  tsitc init -> ten obs "chi" rel "S0" in "turn[lts]" out "turn_p[lst]";
+	  ts3kc 3_ten -> 3_ten obs "kan_S" in "turn[lts]" out "turn_p[lst]";
+	  ts2kc 2_ten -> 2_ten obs "kan_S" in "turn[lts]" out "turn_p[lst]";
+	  ts1kc 1_ten -> 1_ten obs "kan_S" in "turn[lts]" out "turn_p[lst]";
+	  tstkc ten -> ten obs "kan_S" in "turn[lts]" out "turn_p[lst]";
+
+	  # riichi
+	  tsirn init -> ten obs "riichi" rel "S0" in "turn[lts]" out "turn[lst]";
+	  ts1rn 1_ten -> ten obs "riichi" rel "S0" in "turn[lts]" out "turn[lst]";
+	  tstrn ten -> ten obs "riichi" in "turn[lts]" out "turn[lst]";
+
+	  # tsumo
+	  tsits init -> fin obs "tsumo" rel "S" in "turn[lts]";
+	  tstts ten -> fin obs "tsumo" rel "S" in "turn[lts]";
+
+	  # init
+	  tsi3d init -> 3_ten obs "discard" in "turn[lts]" out "turn[lst]";
+	  tsi2k init -> 2_ten obs "keep" rel "S2" in "turn[lts]" out "turn[lst]";
+	  tsi2d init -> 2_ten obs "discard" in "turn[lts]" out "turn[lst]";
+	  tsi1k init -> 1_ten obs "keep" rel "S1" in "turn[lts]" out "turn[lst]";
+	  tsi1d init -> 1_ten obs "discard" in "turn[lts]" out "turn[lst]";
+	  tsitk init -> ten obs "keep" rel "S0" in "turn[lts]" out "turn[lst]";
+	  tsitd init -> ten obs "discard" in "turn[lts]" out "turn[lst]";
+
+	  # 3_ten
+	  ts32k 3_ten -> 2_ten obs "keep" rel "S2" in "turn[lts]" out "turn[lst]";
+	  ts33d 3_ten -> 3_ten obs "discard" in "turn[lts]" out "turn[lst]";
+
+	  # 2_ten
+	  ts21k 2_ten -> 1_ten obs "keep" rel "S1" in "turn[lts]" out "turn[lst]";
+	  ts22d 2_ten -> 2_ten obs "discard" in "turn[lts]" out "turn[lst]";
+
+	  # 1_ten
+	  ts1tk 1_ten -> ten obs "keep" rel "S0" in "turn[lts]" out "turn[lst]";
+	  ts11d 1_ten -> 1_ten obs "discard" in "turn[lts]" out "turn[lst]";
+
+	  # ten
+	  tstt ten -> ten obs "discard" in "turn[lts]" out "turn[lst]";
+end
+
+automaton west:
+	  states: init, 3_ten, 2_ten, 1_ten, ten, fin;
+	  initial: init;
+
+	  # pon
+	  twi2p init -> 2_ten obs "pon_W" rel "W2" in "turn_p[ltw]" out "turn_p[lwt]";
+	  twi1p init -> 1_ten obs "pon_W" rel "W1" in "turn_p[ltw]" out "turn_p[lwt]";
+	  twitp init -> ten obs "pon_W" rel "W0" in "turn_p[ltw]" out "turn_p[lwt]";
+	  tw22p 3_ten -> 2_ten obs "pon_W" rel "W2" in "turn_p[ltw]" out "turn_p[lwt]";
+	  tw21p 2_ten -> 1_ten obs "pon_W" rel "W1" in "turn_p[ltw]" out "turn_p[lwt]";
+	  tw1tp 1_ten -> ten obs "pon_W" rel "W0" in "turn_p[ltw]" out "turn_p[lwt]";
+
+	  # kan
+	  twik init -> init obs "kan_W" in "turn_p[ltw]" out "turn_p[lwt]";
+	  tw3k 3_ten -> 3_ten obs "kan_W" in "turn_p[ltw]" out "turn_p[lwt]";
+	  tw2k 2_ten -> 2_ten obs "kan_W" in "turn_p[ltw]" out "turn_p[lwt]";
+	  tw1k 1_ten -> 1_ten obs "kan_W" in "turn_p[ltw]" out "turn_p[lwt]";
+	  twtk ten -> ten obs "kan_W" in "turn_p[ltw]" out "turn_p[lwt]";
+
+	  # ron
+	  twir init -> fin obs "ron_W" rel "W" in "turn_p[ltw]";
+	  twtr ten -> fin obs "ron_W" rel "W" in "turn_p[ltw]";
+
+	  # chi
+	  twi2c init -> 2_ten obs "chi" rel "W2" in "turn[ltw]" out "turn_p[lwt]";
+	  twi1c init -> 1_ten obs "chi" rel "W1" in "turn[ltw]" out "turn_p[lwt]";
+	  twitc init -> ten obs "chi" rel "W0" in "turn[ltw]" out "turn_p[lwt]";
+	  tw32c 3_ten -> 2_ten obs "chi" rel "W2" in "turn[ltw]" out "turn_p[lwt]";
+	  tw21c 2_ten -> 1_ten obs "chi" rel "W1" in "turn[ltw]" out "turn_p[lwt]";
+	  tw1tc 1_ten -> ten obs "chi" rel "W0" in "turn[ltw]" out "turn_p[lwt]";
+
+	  # concealed kan
+	  twikc init -> init obs "kan_W" in "turn[ltw]" out "turn_p[lwt]";
+	  tw3kc 3_ten -> 3_ten obs "kan_W" in "turn[ltw]" out "turn_p[lwt]";
+	  tw2kc 2_ten -> 2_ten obs "kan_W" in "turn[ltw]" out "turn_p[lwt]";
+	  tw1kc 1_ten -> 1_ten obs "kan_W" in "turn[ltw]" out "turn_p[lwt]";
+	  twtkc ten -> ten obs "kan_W" in "turn[ltw]" out "turn_p[lwt]";
+
+	  # riichi
+	  twirn init -> ten obs "riichi" rel "W0" in "turn[ltw]" out "turn[lwt]";
+	  tw1rn 1_ten -> ten obs "riichi" rel "W0" in "turn[ltw]" out "turn[lwt]";
+	  twtrn ten -> ten obs "riichi" in "turn[ltw]" out "turn[lwt]";
+
+	  # tsumo
+	  twits init -> fin obs "tsumo" rel "W" in "turn[ltw]";
+	  twtts ten -> fin obs "tsumo" rel "W" in "turn[ltw]";
+
+	  # init
+	  twi3d init -> 3_ten obs "discard" in "turn[ltw]" out "turn[lwt]";
+	  twi2k init -> 2_ten obs "keep" rel "W2" in "turn[ltw]" out "turn[lwt]";
+	  twi2d init -> 2_ten obs "discard" in "turn[ltw]" out "turn[lwt]";
+	  twi1k init -> 1_ten obs "keep" rel "W1" in "turn[ltw]" out "turn[lwt]";
+	  twi1d init -> 1_ten obs "discard" in "turn[ltw]" out "turn[lwt]";
+	  twitk init -> ten obs "keep" rel "W0" in "turn[ltw]" out "turn[lwt]";
+	  twitd init -> ten obs "discard" in "turn[ltw]" out "turn[lwt]";
+
+	  # 3_ten
+	  tw32k 3_ten -> 2_ten obs "keep" rel "W2" in "turn[ltw]" out "turn[lwt]";
+	  tw33d 3_ten -> 3_ten obs "discard" in "turn[ltw]" out "turn[lwt]";
+
+	  # 2_ten
+	  tw21k 2_ten -> 1_ten obs "keep" rel "W1" in "turn[ltw]" out "turn[lwt]";
+	  tw22d 2_ten -> 2_ten obs "discard" in "turn[ltw]" out "turn[lwt]";
+
+	  # 1_ten
+	  tw1tk 1_ten -> ten obs "keep" rel "W0" in "turn[ltw]" out "turn[lwt]";
+	  tw11d 1_ten -> 1_ten obs "discard" in "turn[ltw]" out "turn[lwt]";
+
+	  # ten
+	  twtt ten -> ten obs "discard" in "turn[ltw]" out "turn[lwt]";
+end
+
+automaton north:
+	  states: init, 3_ten, 2_ten, 1_ten, ten, fin;
+	  initial: init;
+
+	  # pon
+	  tni2p init -> 2_ten obs "pon_N" rel "N2" in "turn_p[ltn]" out "turn_p[lnt]";
+	  tni1p init -> 1_ten obs "pon_N" rel "N1" in "turn_p[ltn]" out "turn_p[lnt]";
+	  tnitp init -> ten obs "pon_N" rel "N0" in "turn_p[ltn]" out "turn_p[lnt]";
+	  tn22p 3_ten -> 2_ten obs "pon_N" rel "N2" in "turn_p[ltn]" out "turn_p[lnt]";
+	  tn21p 2_ten -> 1_ten obs "pon_N" rel "N1" in "turn_p[ltn]" out "turn_p[lnt]";
+	  tn1tp 1_ten -> ten obs "pon_N" rel "N0" in "turn_p[ltn]" out "turn_p[lnt]";
+
+	  # kan
+	  tnik init -> init obs "kan_N" in "turn_p[ltn]" out "turn_p[lnt]";
+	  tn3k 3_ten -> 3_ten obs "kan_N" in "turn_p[ltn]" out "turn_p[lnt]";
+	  tn2k 2_ten -> 2_ten obs "kan_N" in "turn_p[ltn]" out "turn_p[lnt]";
+	  tn1k 1_ten -> 1_ten obs "kan_N" in "turn_p[ltn]" out "turn_p[lnt]";
+	  tntk ten -> ten obs "kan_N" in "turn_p[ltn]" out "turn_p[lnt]";
+
+	  # ron
+	  tnir init -> fin obs "ron_N" rel "N" in "turn_p[ltn]";
+	  tntr ten -> fin obs "ron_N" rel "N" in "turn_p[ltn]";
+
+	  # chi
+	  tni2c init -> 2_ten obs "chi" rel "N2" in "turn[ltn]" out "turn_p[lnt]";
+	  tni1c init -> 1_ten obs "chi" rel "N1" in "turn[ltn]" out "turn_p[lnt]";
+	  tnitc init -> ten obs "chi" rel "N0" in "turn[ltn]" out "turn_p[lnt]";
+	  tn32c 3_ten -> 2_ten obs "chi" rel "N2" in "turn[ltn]" out "turn_p[lnt]";
+	  tn21c 2_ten -> 1_ten obs "chi" rel "N1" in "turn[ltn]" out "turn_p[lnt]";
+	  tn1tc 1_ten -> ten obs "chi" rel "N0" in "turn[ltn]" out "turn_p[lnt]";
+
+	  # concealed kan
+	  tnikc init -> init obs "kan_N" in "turn[ltn]" out "turn_p[lnt]";
+	  tn3kc 3_ten -> 3_ten obs "kan_N" in "turn[ltn]" out "turn_p[lnt]";
+	  tn2kc 2_ten -> 2_ten obs "kan_N" in "turn[ltn]" out "turn_p[lnt]";
+	  tn1kc 1_ten -> 1_ten obs "kan_N" in "turn[ltn]" out "turn_p[lnt]";
+	  tntkc ten -> ten obs "kan_N" in "turn[ltn]" out "turn_p[lnt]";
+
+	  # riichi
+	  tnirn init -> ten obs "riichi" rel "N0" in "turn[ltn]" out "turn[lnt]";
+	  tn1rn 1_ten -> ten obs "riichi" rel "N0" in "turn[ltn]" out "turn[lnt]";
+	  tntrn ten -> ten obs "riichi" in "turn[ltn]" out "turn[lnt]";
+
+	  # tsumo
+	  tnits init -> fin obs "tsumo" rel "N" in "turn[ltn]";
+	  tntts ten -> fin obs "tsumo" rel "N" in "turn[ltn]";
+
+	  # init
+	  tni3d init -> 3_ten obs "discard" in "turn[ltn]" out "turn[lnt]";
+	  tni2k init -> 2_ten obs "keep" rel "N2" in "turn[ltn]" out "turn[lnt]";
+	  tni2d init -> 2_ten obs "discard" in "turn[ltn]" out "turn[lnt]";
+	  tni1k init -> 1_ten obs "keep" rel "N1" in "turn[ltn]" out "turn[lnt]";
+	  tni1d init -> 1_ten obs "discard" in "turn[ltn]" out "turn[lnt]";
+	  tnitk init -> ten obs "keep" rel "N0" in "turn[ltn]" out "turn[lnt]";
+	  tnitd init -> ten obs "discard" in "turn[ltn]" out "turn[lnt]";
+
+	  # 3_ten
+	  tn32k 3_ten -> 2_ten obs "keep" rel "N2" in "turn[ltn]" out "turn[lnt]";
+	  tn33d 3_ten -> 3_ten obs "discard" in "turn[ltn]" out "turn[lnt]";
+
+	  # 2_ten
+	  tn21k 2_ten -> 1_ten obs "keep" rel "N1" in "turn[ltn]" out "turn[lnt]";
+	  tn22d 2_ten -> 2_ten obs "discard" in "turn[ltn]" out "turn[lnt]";
+
+	  # 1_ten
+	  tn1tk 1_ten -> ten obs "keep" rel "N0" in "turn[ltn]" out "turn[lnt]";
+	  tn11d 1_ten -> 1_ten obs "discard" in "turn[ltn]" out "turn[lnt]";
+
+	  # ten
+	  tntt ten -> ten obs "discard" in "turn[ltn]" out "turn[lnt]";
+end
+
+
+obs: keep, discard, chi, discard, discard, keep, kan_S, kan_S, tsumo;
