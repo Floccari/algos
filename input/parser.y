@@ -26,10 +26,10 @@ struct action *act = NULL;
 struct state *st;
 struct transition *tr = NULL;
 struct label *lab = NULL;
-int size;
 
 struct map_item *item = NULL;
 struct hashmap *hashmap;
+size_t hashmap_size;
 
 #define SYMBOL_TABLE_SIZE 1000
 
@@ -156,10 +156,10 @@ aut : AUT ID {item = hashmap_search(hashmap, lexval, AUTOMATON);
 	      
 	      item->subvalue = (void *) 1;
 	      aut = (struct automaton *) item->value;
-              size = 0;}
+              hashmap_size = 0;}
 
-      ':' st-list init tr-list END {aut->sttr_hashmap = hashmap_create(size);
-	                            size = 0;
+      ':' st-list init tr-list END {aut->sttr_hashmap = hashmap_create(hashmap_size);
+	                            hashmap_size = 0;
 				    
       	  	       	       	    struct list *l = aut->states;
 
@@ -220,7 +220,7 @@ st : ID {// aut initialized in rule "aut"
 			map_item_create_with_sub(st->id, STATE, st, aut));
 	 
 	 aut->states = head_insert(aut->states, list_create(st));
-	 size++;}
+	 hashmap_size++;}
 
      regexp
 	   
@@ -236,7 +236,7 @@ st : ID {// aut initialized in rule "aut"
 			    map_item_create_with_sub(st->id, STATE, st, aut));
 	     
 	     aut->states = head_insert(aut->states, list_create(st));
-	     size++;}
+	     hashmap_size++;}
 
      ']' regexp
    ;
@@ -298,7 +298,7 @@ tr : ID {item = hashmap_search(hashmap, lexval, TRANSITION);
 	       tr->src->tr_out = head_insert(tr->src->tr_out, list_create(tr));
 	       tr->dest->tr_in = head_insert(tr->dest->tr_in, list_create(tr));
 	       aut->transitions = head_insert(aut->transitions, list_create(tr));
-	       size += 3;}
+	       hashmap_size += 3;}
      
      obs-decl rel-decl in-decl out-decl ';'
    ;

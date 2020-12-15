@@ -134,7 +134,7 @@ char *diagnosticate(struct automaton *dctor, struct list *observation) {
 	struct hashmap *new_hashmap = hashmap_create(sam);
 	
 	/*** foreach state in s_hashmap ***/
-	for (int i = 0; i < s_hashmap->size; i++) {
+	for (size_t i = 0; i < s_hashmap->nelem; i++) {
 	    if (s_hashmap->buffer[i]) {
 		struct map_item *item = s_hashmap->buffer[i];
 		
@@ -203,7 +203,7 @@ char *diagnosticate(struct automaton *dctor, struct list *observation) {
 
     if (!stop) {
 	/*** foreach state in s_hashmap ***/
-	for (int i = 0; i < s_hashmap->size; i++) {
+	for (size_t i = 0; i < s_hashmap->nelem; i++) {
 	    if (s_hashmap->buffer[i]) {
 		struct map_item *item = s_hashmap->buffer[i];
 	    

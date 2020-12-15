@@ -19,24 +19,24 @@ struct map_item *map_item_create_with_sub(char *id, enum types type, void *value
     return item;
 }
 
-struct hashmap *hashmap_create(int size) {
+struct hashmap *hashmap_create(size_t nelem) {
     struct hashmap *hashmap = malloc(sizeof (struct hashmap));
 //    memset(item, 0, sizeof (struct hashmap));
 
-    hashmap->buffer = calloc(size, sizeof (struct map_item *));
+    hashmap->buffer = calloc(nelem, sizeof (struct map_item *));
 
     if (!hashmap->buffer) {
 	fprintf(stderr, "memory allocation failed during hashmap creation, exiting...\n");
 	exit(-1);
     }
-    memset(hashmap->buffer, 0, sizeof (struct map_item *) * size);
-    hashmap->size = size;
+    memset(hashmap->buffer, 0, nelem * sizeof (struct map_item *));
+    hashmap->nelem = nelem;
 
     return hashmap;
 }
 
 void hashmap_empty(struct hashmap *hashmap, bool free_ids) {
-    for (int i = 0; i < hashmap->size; i++)
+    for (size_t i = 0; i < hashmap->nelem; i++)
 	if (hashmap->buffer[i]) {
 	    struct map_item *item = hashmap->buffer[i];
 	    hashmap->buffer[i] = NULL;
@@ -58,18 +58,8 @@ void hashmap_destroy(struct hashmap *hashmap) {
     free(hashmap);
 }
 
-/* int hash(char *id, int m) { */
-/*     int h = 0; */
-/*     char *p = id; */
-    
-/*     while (*p != '\0') */
-/* 	h = ((h * 256) + *p++) % m; */
-
-/*     return  h; */
-/* } */
-
-int hash(char *id, int m) {
-    int h = 0;
+int hash(char *id, size_t m) {
+    size_t h = 0;
     float a = 0.618034;    // (sqrt(5) - 1) / 2;
     char k;
     
@@ -86,14 +76,14 @@ int hash(char *id, int m) {
 }
 
 void hashmap_insert(struct hashmap *hashmap, struct map_item *item) {
-    int key = hash(item->id, hashmap->size);
+    size_t key = hash(item->id, hashmap->nelem);
 
     item->next = hashmap->buffer[key];
     hashmap->buffer[key] = item;
 }
 
 struct map_item *hashmap_search(struct hashmap *hashmap, char *id, enum types type) {
-    int key = hash(id, hashmap->size);
+    size_t key = hash(id, hashmap->nelem);
     struct map_item *item = hashmap->buffer[key];
     
     while (item)
@@ -106,7 +96,7 @@ struct map_item *hashmap_search(struct hashmap *hashmap, char *id, enum types ty
 }
 
 struct map_item *hashmap_search_with_sub(struct hashmap *hashmap, char *id, enum types type, void *sub) {
-    int key = hash(id, hashmap->size);
+    size_t key = hash(id, hashmap->nelem);
     struct map_item *item = hashmap->buffer[key];
     
     while (item)
@@ -119,7 +109,7 @@ struct map_item *hashmap_search_with_sub(struct hashmap *hashmap, char *id, enum
 }
 
 struct map_item *hashmap_search_and_remove(struct hashmap *hashmap, char *id, enum types type) {
-    int key = hash(id, hashmap->size);
+    size_t key = hash(id, hashmap->nelem);
     struct map_item *item = hashmap->buffer[key];
 
     if (item) {
@@ -143,7 +133,7 @@ struct map_item *hashmap_search_and_remove(struct hashmap *hashmap, char *id, en
 }
 
 struct map_item *hashmap_search_with_sub_and_remove(struct hashmap *hashmap, char *id, enum types type, void *sub) {
-    int key = hash(id, hashmap->size);
+    size_t key = hash(id, hashmap->nelem);
     struct map_item *item = hashmap->buffer[key];
 
     if (item) {

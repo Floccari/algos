@@ -28,8 +28,7 @@ struct map_item {
 
 struct hashmap {
     struct map_item **buffer;
-    int size;
-    // 4 bytes
+    size_t nelem;
 };
 
 
@@ -37,13 +36,11 @@ struct map_item *map_item_create(char *id, enum types type, void *value);
 
 struct map_item *map_item_create_with_sub(char *id, enum types type, void *value, void *subvalue);
 
-struct hashmap *hashmap_create(int size);
+struct hashmap *hashmap_create(size_t nelem);
 
 void hashmap_empty(struct hashmap *hashmap, bool free_ids);
 
 void hashmap_destroy(struct hashmap *hashmap);
-
-int hash(char *id, int m);
 
 void hashmap_insert(struct hashmap *hashmap, struct map_item *item);
 
