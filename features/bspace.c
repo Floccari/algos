@@ -8,49 +8,37 @@ extern sig_atomic_t stop;
 long st_amount;
 long tr_amount;
 bool comp_set;
-struct network *bs_net;
+struct automaton *bs_aut;
 struct hashmap *ct_hashmap;
 
-struct network *compute(struct network *net, bool comp);
+struct automaton *compute(struct network *net, bool comp);
 void step(struct state *current_bs_state);
-void prune(struct network *net);
+void prune(struct automaton *net);
 void dfs_visit(struct state *st);
 
 
-struct network *comp_compute(struct network *net) {
+struct automaton *comp_compute(struct network *net) {
     return compute(net, true);
 }
 
-struct network *bspace_compute(struct network *net) {
+struct automaton *bspace_compute(struct network *net) {
     return compute(net, false);
 }
 
 
-struct network *compute(struct network *net, bool comp) {
+struct automaton *compute(struct network *net, bool comp) {
     /*** compute the maximum amount of contexts ***/
     size_t sam = maximum_state_amount(net);
     size_t ct_amount = pow(sam, net->aut_amount) * net->lk_amount;
     
     ct_hashmap = hashmap_create(ct_amount);
-
-    if (comp)
-	bs_net = network_create("comp_network");
-    else
-	bs_net = network_create("bs_network");
-    
     st_amount = 0;
     tr_amount = 0;
-
-    /*** populate bs_net with a single automaton ***/
-    struct automaton *bs_aut;
 
     if (comp)
 	bs_aut = automaton_create("comp", 4 * ct_amount);
     else
 	bs_aut = automaton_create("bspace", 4 * ct_amount);
-
-    tail_insert(bs_net->automatons, list_item_create(bs_aut));
-    bs_net->aut_amount++;
 
     /*** initialize context and assign indexes to the links ***/
     struct context *c = context_create(net->aut_amount, net->lk_amount);
@@ -101,19 +89,18 @@ struct network *compute(struct network *net, bool comp) {
 
     /*** pruning ***/
     if (!stop)
-	prune(bs_net);
+	prune(bs_aut);
 
     /*** cleanup (does not delete contexts) ***/
     hashmap_empty(ct_hashmap, false);
     hashmap_destroy(ct_hashmap);
     
-    return bs_net;
+    return bs_aut;
 }
 
 
 void step(struct state *current_bs_state) {
     struct context *c = (struct context *) current_bs_state->value;
-    struct automaton *bs_aut = (struct automaton *) bs_net->automatons->head->value;
 
     /*** foreach current state ***/
     for (int i = 0; i < c->aut_amount; i++) {
@@ -245,8 +232,7 @@ void step(struct state *current_bs_state) {
     return;
 }
 
-void prune(struct network *net) {
-    struct automaton *aut = (struct automaton *) net->automatons->head->value;
+void prune(struct automaton *aut) {
     struct list_item *l = aut->states->head;
 
     /*** color states ***/
