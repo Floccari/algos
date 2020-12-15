@@ -78,7 +78,7 @@ struct context {
     int lk_amount;
     struct state **states;    // current state of every automaton
     char **buffers;    // link buffers
-    struct list *current_obs;    // list item containing current obs label
+    struct list_item *current_obs;    // current obs label
     int obs_index;    // amount of labels processed so far
     // 4 bytes
 };
@@ -147,6 +147,6 @@ struct label *label_alt_create(struct label *lab1, struct label *lab2);
 
 struct label *label_cat_auto_create(struct label *lab1, struct label *lab_auto, struct label *lab2);
 
-int maximum_state_amount(struct network *net);
+size_t maximum_state_amount(struct network *net);
 
 #endif

@@ -5,20 +5,23 @@ struct state *state_create(char *id) {
     memset(st, 0, sizeof (struct state));
     st->id = id;
     st->color = WHITE;    // for pruning with DFS
+
+    st->tr_in = list_create();
+    st->tr_out = list_create();
     
     return st;
 }
 
 void state_attach(struct automaton *aut, struct state *st) {
-    struct list *l = list_create(st);
+    struct list_item *l = list_item_create(st);
 
-    aut->states = head_insert(aut->states, l);
+    tail_insert(aut->states, l);
     hashmap_insert(aut->sttr_hashmap,
 		   map_item_create(st->id, STATE, l));
 }
 
 void state_detach(struct automaton *aut, struct state *st) {
-    struct list *ls = st->tr_in;
+    struct list_item *ls = st->tr_in->head;
     
     /*** remove all incoming transitions ***/
     while (ls) {
@@ -29,7 +32,7 @@ void state_detach(struct automaton *aut, struct state *st) {
 	transition_destroy(tr);
     }
 
-    ls = st->tr_out;
+    ls = st->tr_out->head;
 
     /*** remove all outgoing transitions ***/
     while (ls) {
@@ -42,10 +45,10 @@ void state_detach(struct automaton *aut, struct state *st) {
 
     /*** remove state from the automaton ***/
     struct map_item *item = hashmap_search_and_remove(aut->sttr_hashmap, st->id, STATE);
-    struct list *list_item = (struct list *) item->value;
+    ls = (struct list_item *) item->value;
     
-    aut->states = item_remove(aut->states, list_item);
-    free(list_item);
+    item_remove(aut->states, ls);
+    free(ls);
     free(item);
 }
 
@@ -87,6 +90,8 @@ struct transition *transition_create(char *id) {
     memset(tr, 0, sizeof (struct transition));
     tr->id = id;
 
+    tr->act_out = list_create();
+
     return tr;
 }
 
@@ -94,10 +99,14 @@ void transition_destroy(struct transition *tr) {
     free(tr->id);
     free(tr->act_in);
 
-    while (tr->act_out) {
-	free(tr->act_out->value);
-	tr->act_out = item_remove(tr->act_out, tr->act_out);
+    while (tr->act_out->head) {
+	struct list_item *l = tr->act_out->head;
+	
+	free(l->value);
+	item_remove(tr->act_out, l);
     }
+
+    free(tr->act_out);
 
     if (tr->obs)
 	label_destroy(tr->obs);
@@ -109,23 +118,23 @@ void transition_destroy(struct transition *tr) {
 }
 
 void transition_attach(struct automaton *aut, struct transition *tr) {
-    struct list *l = list_create(tr);
+    struct list_item *l = list_item_create(tr);
     struct state *st = tr->src;
 
-    st->tr_out = head_insert(st->tr_out, l);
+    tail_insert(st->tr_out, l);
     hashmap_insert(aut->sttr_hashmap,
 		   map_item_create_with_sub(tr->id, TRANSITION, l, (void *) TR_OUT));    
 
-    l = list_create(tr);
+    l = list_item_create(tr);
     st = tr->dest;
 
-    st->tr_in = head_insert(st->tr_in, l);
+    tail_insert(st->tr_in, l);
     hashmap_insert(aut->sttr_hashmap,
 		   map_item_create_with_sub(tr->id, TRANSITION, l, (void *) TR_IN));    
 
     /*** add to the automaton ***/
-    l = list_create(tr);
-    aut->transitions = head_insert(aut->transitions, l);
+    l = list_item_create(tr);
+    tail_insert(aut->transitions, l);
     hashmap_insert(aut->sttr_hashmap,
 		   map_item_create_with_sub(tr->id, TRANSITION, l, (void *) TR));
 }
@@ -133,28 +142,28 @@ void transition_attach(struct automaton *aut, struct transition *tr) {
 void transition_detach(struct automaton *aut, struct transition *tr) {
     struct map_item *item = hashmap_search_with_sub_and_remove(aut->sttr_hashmap, tr->id,
 								TRANSITION, (void *) TR_OUT);
-    struct list *l = (struct list *) item->value;
+    struct list_item *l = (struct list_item *) item->value;
     struct state *st = tr->src;
 
-    st->tr_out = item_remove(st->tr_out, l);
+    item_remove(st->tr_out, l);
     free(l);
     free(item);
 
     item = hashmap_search_with_sub_and_remove(aut->sttr_hashmap, tr->id,
 					       TRANSITION, (void *) TR_IN);
-    l = (struct list *) item->value;
+    l = (struct list_item *) item->value;
     st = tr->dest;
 
-    st->tr_in = item_remove(st->tr_in, l);
+    item_remove(st->tr_in, l);
     free(l);
     free(item);
 
     /*** remove from the automaton ***/
     item = hashmap_search_with_sub_and_remove(aut->sttr_hashmap, tr->id,
 					      TRANSITION, (void *) TR);
-    l = (struct list *) item->value;
+    l = (struct list_item *) item->value;
     
-    aut->transitions = item_remove(aut->transitions, l);
+    item_remove(aut->transitions, l);
     free(l);
     free(item);
 }
@@ -164,6 +173,9 @@ struct automaton *automaton_create(char *id, int hashmap_size) {
     memset(aut, 0, sizeof (struct automaton));
     aut->id = id;
     aut->sttr_hashmap = hashmap_create(hashmap_size);
+
+    aut->states = list_create();
+    aut->transitions = list_create();
 
     return aut;
 }
@@ -259,6 +271,11 @@ struct network *network_create(char *id) {
     memset(net, 0, sizeof (struct network));
     net->id = id;
 
+    net->automatons = list_create();
+    net->events = list_create();
+    net->links = list_create();
+    net->observation = list_create();
+
     return net;
 }
 
@@ -268,45 +285,45 @@ void network_serialize(FILE *fc, struct network *net) {
     fprintf(fc, "\tautomatons: ");
 
     /*** net automatons ***/
-    struct list *l = get_last(net->automatons);
+    struct list_item *l = net->automatons->head;
 
     if (l) {
 	struct automaton *aut = (struct automaton *) l->value;
 	fprintf(fc, "%s", aut->id);
 
-	l = l->prev;
+	l = l->next;
     
 	while (l) {
 	    struct automaton *aut = (struct automaton *) l->value;
 	    fprintf(fc, ", %s", aut->id);
 	    
-	    l = l->prev;
+	    l = l->next;
 	}
 	
 	fprintf(fc, ";\n");
     }
 
     /*** net events ***/
-    l = get_last(net->events);
+    l = net->events->head;
 
     if (l) {
 	char *e = (char *) l->value;
 	fprintf(fc, "\tevents: %s", e);
 
-	l = l->prev;
+	l = l->next;
 
 	while (l) {
 	    char *e = (char *) l->value;
 	    fprintf(fc, ", %s", e);
 	    
-	    l = l->prev;
+	    l = l->next;
 	}
 
 	fprintf(fc, ";\n");
     }
 
     /*** net links ***/
-    l = get_last(net->links);
+    l = net->links->head;
 
     if (l)
 	fprintf(fc, "\n");
@@ -315,13 +332,13 @@ void network_serialize(FILE *fc, struct network *net) {
 	struct link *lk = (struct link *) l->value;
 	fprintf(fc, "\t%s %s -> %s;\n", lk->id, lk->src->id, lk->dest->id);
 
-	l = l->prev;
+	l = l->next;
     }
 
     fprintf(fc, "end\n");
 
     /*** automatons ***/
-    l = get_last(net->automatons);
+    l = net->automatons->head;
 
     while(l) {
 	struct automaton *aut = (struct automaton *) l->value;
@@ -333,7 +350,7 @@ void network_serialize(FILE *fc, struct network *net) {
 	fprintf(fc, "\tstates: ");
 
 	/*** aut states and inital ***/
-	struct list *ls = get_last(aut->states);
+	struct list_item *ls = aut->states->head;
 
 	if (ls) {
 	    struct state *s = (struct state *) ls->value;
@@ -347,7 +364,7 @@ void network_serialize(FILE *fc, struct network *net) {
 	    if (s->delta)
 		fprintf(fc, " \"%s\"", s->delta);
 
-	    ls = ls->prev;
+	    ls = ls->next;
     
 	    while (ls) {
 		struct state *s = (struct state *) ls->value;
@@ -361,7 +378,7 @@ void network_serialize(FILE *fc, struct network *net) {
 		if (s->delta)
 		    fprintf(fc, " \"%s\"", s->delta);
 		
-		ls = ls->prev;
+		ls = ls->next;
 	    }
 	    
 	    fprintf(fc, ";\n");
@@ -370,7 +387,7 @@ void network_serialize(FILE *fc, struct network *net) {
 	fprintf(fc, "\tinitial: %s;\n", aut->initial->id);
 
 	/*** aut transitions ***/
-	ls = get_last(aut->transitions);
+	ls = aut->transitions->head;
 
 	if (ls)
 	    fprintf(fc, "\n");
@@ -390,15 +407,15 @@ void network_serialize(FILE *fc, struct network *net) {
 	    if (tr->act_in)
 		fprintf(fc, " in \"%s[%s]\"", tr->act_in->event, tr->act_in->link->id);
 
-	    if (tr->act_out) {
-		struct list *lt = get_last(tr->act_out);
+	    if (tr->act_out->head) {
+		struct list_item *lt = tr->act_out->head;
 		
 		if (lt) {
 		    struct action *act = (struct action *) lt->value;
 		    
 		    fprintf(fc, " out \"%s[%s]", act->event, act->link->id);
 		    
-		    lt = lt->prev;
+		    lt = lt->next;
 		}
 		
 		while (lt) {
@@ -406,7 +423,7 @@ void network_serialize(FILE *fc, struct network *net) {
 		    
 		    fprintf(fc, ", %s[%s]", act->event, act->link->id);
 		    
-		    lt = lt->prev;
+		    lt = lt->next;
 		}
 		
 		fprintf(fc, "\"");
@@ -414,16 +431,16 @@ void network_serialize(FILE *fc, struct network *net) {
 
 	    fprintf(fc, ";\n");
 	    
-	    ls = ls->prev;
+	    ls = ls->next;
 	}
 
 	fprintf(fc, "end\t# states: %li, transitions: %li\n", st_amount, tr_amount);
 
-	l = l->prev;
+	l = l->next;
     }
 
     /*** observation ***/
-    l = get_last(net->observation);
+    l = net->observation->head;
 
     if (l) {
 	struct label *lab = l->value;
@@ -431,14 +448,14 @@ void network_serialize(FILE *fc, struct network *net) {
 	fprintf(fc, "\n");
 	fprintf(fc, "obs: %s", lab->id);
 
-	l = l->prev;
+	l = l->next;
 	
 	while (l) {
 	    lab = l->value;
 	    
 	    fprintf(fc, ", %s", lab->id);
 
-	    l = l->prev;
+	    l = l->next;
 	}
 
 	fprintf(fc, ";\n");
@@ -450,7 +467,7 @@ void network_print_subs(FILE *fc, struct network *net, struct network *comp_net,
     fprintf(fc, "#");
 
     /*** legend ***/
-    struct list *l = get_last(net->automatons);
+    struct list_item *l = net->automatons->head;
     fprintf(fc, "\t");
 
     while (l) {
@@ -458,19 +475,19 @@ void network_print_subs(FILE *fc, struct network *net, struct network *comp_net,
 	
 	fprintf(fc, "\t%s", aut->id);
 
-	l = l->prev;
+	l = l->next;
     }
 
     fprintf(fc, "\t|");
 
-    l = get_last(net->links);
+    l = net->links->head;
 
     while (l) {
 	struct link *lk = (struct link *) l->value;
 
 	fprintf(fc, "\t%s", lk->id);
 
-	l = l->prev;
+	l = l->next;
     }
 
     if (comp)
@@ -479,8 +496,8 @@ void network_print_subs(FILE *fc, struct network *net, struct network *comp_net,
     fprintf(fc, "\n#\n");
 
     /*** contexts ***/
-    struct automaton *aut =  (struct automaton *) comp_net->automatons->value;
-    l = get_last(aut->states);
+    struct automaton *aut =  (struct automaton *) comp_net->automatons->head->value;
+    l = aut->states->head;
     
     while (l) {
 	struct state *st = (struct state *) l->value;
@@ -490,13 +507,13 @@ void network_print_subs(FILE *fc, struct network *net, struct network *comp_net,
 	struct context *c = (struct context *) st->value;
 
 	/*** states ***/
-	for (int i = net->aut_amount - 1; i >= 0; i--)
+	for (int i = 0; i < net->aut_amount; i++)
 	    fprintf(fc, "\t%s", c->states[i]->id);
 
 	fprintf(fc, "\t");
 
 	/*** links ***/
-	for (int i = net->lk_amount - 1; i >= 0; i--)
+	for (int i = 0; i < net->lk_amount; i++)
 	    fprintf(fc, "\t%s", c->buffers[i]);
 
 	/*** index ***/
@@ -505,7 +522,7 @@ void network_print_subs(FILE *fc, struct network *net, struct network *comp_net,
 	
 	fprintf(fc, "\n");
 
-	l = l->prev;
+	l = l->next;
     }
     
     fprintf(fc, "\n");
@@ -516,7 +533,7 @@ void network_to_dot(FILE *fc, struct network *net) {
     fprintf(fc, "\tcompound = true;\n");
     fprintf(fc, "\n");
 
-    struct list *l = get_last(net->automatons);
+    struct list_item *l = net->automatons->head;
 
     /*** automatons ***/
     while (l) {
@@ -528,7 +545,7 @@ void network_to_dot(FILE *fc, struct network *net) {
 	
 	fprintf(fc, "\t\t%s_init£ [shape = point]\n", aut->id);
 
-	struct list *lt = get_last(aut->states);
+	struct list_item *lt = aut->states->head;
 
 	/*** states ***/
 	while (lt) {
@@ -539,10 +556,10 @@ void network_to_dot(FILE *fc, struct network *net) {
 	    else
 		fprintf(fc, "\t\t%s_%s [label = \"%s\"]\n", aut->id, st->id, st->id);
 
-	    lt = lt->prev;
+	    lt = lt->next;
 	}
 
-	lt = get_last(aut->transitions);
+	lt = aut->transitions->head;
 
 	fprintf(fc, "\n");
 	fprintf(fc, "\t\t%s_init£ -> %s_%s\n", aut->id, aut->id, aut->initial->id);
@@ -553,18 +570,18 @@ void network_to_dot(FILE *fc, struct network *net) {
 
 	    fprintf(fc, "\t\t%s_%s -> %s_%s\n", aut->id, tr->src->id, aut->id, tr->dest->id);
 
-	    lt = lt->prev;
+	    lt = lt->next;
 	}
 
 	fprintf(fc, "\t}\n");
 
-	l = l->prev;
+	l = l->next;
 
 	if (l)
 	    fprintf(fc, "\n");
     }
 
-    l = get_last(net->links);
+    l = net->links->head;
 
     if (l)
 	fprintf(fc, "\n");
@@ -577,7 +594,7 @@ void network_to_dot(FILE *fc, struct network *net) {
 		lk->src->id, lk->src->initial->id, lk->dest->id, lk->dest->initial->id,
 		lk->src->id, lk->dest->id);
 
-	l = l->prev;
+	l = l->next;
     }
 
     fprintf(fc, "}\n");
@@ -851,13 +868,13 @@ struct label *label_cat_auto_create(struct label *lab1, struct label *lab_auto, 
     return label_create(id, RELEVANCE);
 }
 
-int maximum_state_amount(struct network *net) {
-    int max = 0;
-    struct list *la = net->automatons;
+size_t maximum_state_amount(struct network *net) {
+    size_t max = 0;
+    struct list_item *la = net->automatons->head;
 
     while (la) {
 	struct automaton *aut = (struct automaton *) la->value;
-	int tot = item_amount(aut->states);
+	size_t tot = aut->states->nelem;
 
 	if (tot > max)
 	    max = tot;

@@ -26,8 +26,8 @@ char *get_diagnosis(struct automaton *aut) {
 	exit(-1);    // exits here
     }
 
-    if (aut->transitions) {
-	struct transition *tr = (struct transition *) aut->transitions->value;
+    if (aut->transitions->head) {
+	struct transition *tr = (struct transition *) aut->transitions->head->value;
 
 	if (tr->rel)
 	    return tr->rel->id;
@@ -61,7 +61,7 @@ void do_regexp(struct automaton *aut, bool split) {
     aut->initial = init;
 
     /*** add new final state ***/
-    struct list *l = aut->states;
+    struct list_item *l = aut->states->head;
     fin = state_create("_fin");
 
     state_attach(aut, fin);
@@ -83,8 +83,8 @@ void do_regexp(struct automaton *aut, bool split) {
 
     /*** if !split, while more than one transition ***/
     /*** else, while more than 2 states, or more than one transition with the same sub ***/
-    while ((!split && aut->transitions->next) ||
-	   (split && (aut->states->next->next || multiple_tr(aut)))) {
+    while ((!split && aut->transitions->head->next) ||
+	   (split && (aut->states->head->next->next || multiple_tr(aut)))) {
 
 	if (!stop)
 	    phase_one(aut, split);    // 16-17, split: 12-19
@@ -99,18 +99,18 @@ void do_regexp(struct automaton *aut, bool split) {
 	    break;
 
 	/*** prevent segfaults if the input network is wrong ***/
-	if (!aut->transitions)
+	if (!aut->transitions->head)
 	    diag_error();    // exits here
     }
 }
 
 
 bool multiple_tr(struct automaton *aut) {
-    int tam = item_amount(aut->transitions);
+    size_t tam = aut->transitions->nelem;
     struct hashmap *sub_hashmap = hashmap_create(tam);
     bool empty_tr = false;
 
-    struct list *l = aut->transitions;
+    struct list_item *l = aut->transitions->head;
 
     while (l) {
 	struct transition *tr = (struct transition *) l->value;
@@ -157,15 +157,15 @@ bool multiple_tr(struct automaton *aut) {
 }
 
 void phase_one(struct automaton *aut, bool split) {
-    struct list *l = aut->states;
+    struct list_item *l = aut->states->head;
 
     /*** foreach state ***/
     while (l) {
 	struct state *st = (struct state *) l->value;
 
 	/*** 1 tr in, 1 tr out ***/
-	if (st->tr_in && !st->tr_in->next &&
-	    st->tr_out && !st->tr_out->next) {
+	if (st->tr_in->head && !st->tr_in->head->next &&
+	    st->tr_out->head && !st->tr_out->head->next) {
 
 	    /*** save pointer to next state ***/
 	    l = l->next;
@@ -173,8 +173,8 @@ void phase_one(struct automaton *aut, bool split) {
 	    /*** create new transition ***/
 	    struct transition *tr = transition_create(univ_tr_id_create(tr_amount++));
 
-	    struct transition *tr_in = (struct transition *) st->tr_in->value;
-	    struct transition *tr_out = (struct transition *) st->tr_out->value;
+	    struct transition *tr_in = (struct transition *) st->tr_in->head->value;
+	    struct transition *tr_out = (struct transition *) st->tr_out->head->value;
 
 	    tr->src = tr_in->src;
 	    tr->dest = tr_out->dest;
@@ -204,10 +204,10 @@ void phase_one(struct automaton *aut, bool split) {
 }
 
 void phase_two(struct automaton *aut, bool split) {
-    int tam = item_amount(aut->transitions);
+    size_t tam = aut->transitions->nelem;
     struct hashmap *tr_hashmap = hashmap_create(tam);
 
-    struct list *l = aut->transitions;
+    struct list_item *l = aut->transitions->head;
 
     /*** foreach transition ***/
     while (l) {
@@ -281,7 +281,7 @@ void phase_two(struct automaton *aut, bool split) {
 }
 
 void phase_three(struct automaton *aut, bool split) {
-    struct list *l = aut->states;
+    struct list_item *l = aut->states->head;
 
     /*** foreach state ***/
     while (l) {
@@ -289,7 +289,7 @@ void phase_three(struct automaton *aut, bool split) {
 
 	/*** that is not _init or _fin ***/
 	if (st != init && st != fin) {
-	    struct list *lt_in = st->tr_in;
+	    struct list_item *lt_in = st->tr_in->head;
 	    struct label *autotr = NULL;
 
 	    /*** check if there is an auto-transition ***/
@@ -310,13 +310,13 @@ void phase_three(struct automaton *aut, bool split) {
 		    lt_in = lt_in->next;
 	    }
 
-	    lt_in = st->tr_in;
+	    lt_in = st->tr_in->head;
 
 	    /*** foreach incoming transition ***/
 	    while (lt_in) {
 		struct transition *tr_in = (struct transition *) lt_in->value;
 		
-		struct list *lt_out = st->tr_out;
+		struct list_item *lt_out = st->tr_out->head;
 
 		/*** foreach outgoing transition ***/
 		while (lt_out) {

@@ -108,7 +108,7 @@ int main(int argc, char **argv) {
 	
     } else if (strcmp(argv[1], "diag") == 0) {
 
-	struct automaton *aut = (struct automaton *) net->automatons->value;
+	struct automaton *aut = (struct automaton *) net->automatons->head->value;
 	char *diagnosis = get_diagnosis(aut);
 	fprintf(stdout, "%s\n", diagnosis);
 	exit(0);
@@ -116,9 +116,8 @@ int main(int argc, char **argv) {
     } else if (strcmp(argv[1], "dctor") == 0) {
 
 	struct network *dctor = network_create("dctor_net");
-	struct automaton *in = (struct automaton *) net->automatons->value;
-	dctor->automatons = head_insert(dctor->automatons,
-					list_create(get_diagnosticator(in)));
+	struct automaton *in = (struct automaton *) net->automatons->head->value;
+	head_insert(dctor->automatons, list_item_create(get_diagnosticator(in)));
 	dctor->observation = net->observation;
 
 	if (stop) {
@@ -132,7 +131,7 @@ int main(int argc, char **argv) {
 	
     }  else if (strcmp(argv[1], "dcdiag") == 0) {
 
-	char *diagnosis = diagnosticate((struct automaton *) net->automatons->value,
+	char *diagnosis = diagnosticate((struct automaton *) net->automatons->head->value,
 				       net->observation);
 	fprintf(stdout, "%s\n", diagnosis);
 	exit(0);

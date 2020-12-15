@@ -28,7 +28,7 @@ struct network *bspace_compute(struct network *net) {
 
 struct network *compute(struct network *net, bool comp) {
     /*** compute the maximum amount of contexts ***/
-    int sam = maximum_state_amount(net);
+    size_t sam = maximum_state_amount(net);
     size_t ct_amount = pow(sam, net->aut_amount) * net->lk_amount;
     
     ct_hashmap = hashmap_create(ct_amount);
@@ -49,13 +49,12 @@ struct network *compute(struct network *net, bool comp) {
     else
 	bs_aut = automaton_create("bspace", 4 * ct_amount);
 
-    bs_net->automatons = head_insert(bs_net->automatons,
-				     list_create(bs_aut));
+    tail_insert(bs_net->automatons, list_item_create(bs_aut));
     bs_net->aut_amount++;
 
     /*** initialize context and assign indexes to the links ***/
     struct context *c = context_create(net->aut_amount, net->lk_amount);
-    struct list *l = net->automatons;
+    struct list_item *l = net->automatons->head;
     
     for (int i = 0; i < net->aut_amount; i++) {
 	struct automaton *aut = (struct automaton *) l->value;
@@ -64,7 +63,7 @@ struct network *compute(struct network *net, bool comp) {
 	l = l->next;
     }
 
-    l = net->links;
+    l = net->links->head;
     int index = 0;
     
     while (l) {
@@ -77,7 +76,7 @@ struct network *compute(struct network *net, bool comp) {
     memset(c->buffers, 0, sizeof (char *) * net->lk_amount);
     
     c->id = context_id_create(c);
-    c->current_obs = get_last(net->observation);    // since it's stored in REVERSE ORDER
+    c->current_obs = net->observation->head;
 
     /*** create initial state and insert it ***/
     struct state *st = state_create(state_id_create(st_amount++));
@@ -114,12 +113,12 @@ struct network *compute(struct network *net, bool comp) {
 
 void step(struct state *current_bs_state) {
     struct context *c = (struct context *) current_bs_state->value;
-    struct automaton *bs_aut = (struct automaton *) bs_net->automatons->value;
+    struct automaton *bs_aut = (struct automaton *) bs_net->automatons->head->value;
 
     /*** foreach current state ***/
     for (int i = 0; i < c->aut_amount; i++) {
 	struct state *st = c->states[i];
-	struct list *l = st->tr_out;
+	struct list_item *l = st->tr_out->head;
 
 	/*** foreach outgoing transition ***/	
 	while (l) {
@@ -138,7 +137,7 @@ void step(struct state *current_bs_state) {
 		    new_context->buffers[a->link->index] = NULL;
 		}
 
-		struct list *ls = tr->act_out;
+		struct list_item *ls = tr->act_out->head;
 
 		/*** update output links, abort if one of them is full ***/
 		while (ls) {
@@ -171,7 +170,7 @@ void step(struct state *current_bs_state) {
 			    goto NEXT_TRANSITION;
 			}
 			
-			new_context->current_obs = new_context->current_obs->prev;
+			new_context->current_obs = new_context->current_obs->next;
 			new_context->obs_index++;
 		    }
 		}
@@ -247,8 +246,8 @@ void step(struct state *current_bs_state) {
 }
 
 void prune(struct network *net) {
-    struct automaton *aut = (struct automaton *) net->automatons->value;
-    struct list *l = aut->states;
+    struct automaton *aut = (struct automaton *) net->automatons->head->value;
+    struct list_item *l = aut->states->head;
 
     /*** color states ***/
     while (l) {
@@ -263,7 +262,7 @@ void prune(struct network *net) {
 	    break;
     }
 
-    l = aut->states;
+    l = aut->states->head;
 
     /*** prune states ***/
     while (l) {
@@ -289,7 +288,7 @@ void prune(struct network *net) {
 void dfs_visit(struct state *source) {
     source->color = GRAY;
 
-    struct list *l = source->tr_in;    // since we are going backwards
+    struct list_item *l = source->tr_in->head;    // since we are going backwards
 
     while (l) {
 	struct transition *tr = (struct transition *) l->value;

@@ -1,65 +1,58 @@
 #include "list.h"
 
-struct list *list_create(void *value) {
+struct list_item *list_item_create(void *value) {
+    struct list_item *item = malloc(sizeof (struct list_item));
+    memset(item, 0, sizeof (struct list_item));
+    item->value = value;
+
+    return item;
+}
+
+struct list *list_create() {
     struct list *l = malloc(sizeof (struct list));
-    memset(l, 0, sizeof(struct list));
-    l->value = value;
+    memset(l, 0, sizeof (struct list));
 
     return l;
 }
 
-struct list *get_last(struct list *l) {
-    if (l)
-	while (l->next)
-	    l = l->next;
+void head_insert(struct list *l, struct list_item *item) {
+    if (l->head) {
+	l->head->prev = item;
+	item->next = l->head;
 
-    return l;
-}
-
-struct list *head_insert(struct list *l, struct list *node) {
-    if (l) {
-	l->prev = node;
-	node->next = l;
+	l->head = item;
+    } else {
+	l->head = item;
+	l->tail = item;
     }
 
-    return node;
+    l->nelem++;
 }
 
-struct list *item_remove(struct list *l, struct list *item) {
+void tail_insert(struct list *l, struct list_item *item) {
+    if (l->tail) {
+	l->tail->next = item;
+	item->prev = l->tail;
+
+	l->tail = item;
+    } else {
+	l->head = item;
+	l->tail = item;
+    }
+
+    l->nelem++;
+}
+
+void item_remove(struct list *l, struct list_item *item) {
     if (item->next)
 	item->next->prev = item->prev;
-    
-    if (item->prev) {
+    else
+	l->tail = item->prev;
+
+    if (item->prev)
 	item->prev->next = item->next;
-	return l;
-    } else
-	return item->next;
-}
+    else
+	l->head = item->next;
 
-/* struct list *search_and_remove(struct list *l, void *value) { */
-/*     struct list *current = l; */
-    
-/*     while (current) { */
-/* 	if (current->value == value) { */
-/* 	    struct list *to_return = item_remove(l, current); */
-/* 	    free(current); */
-/* 	    return to_return;    // exits here */
-/* 	} */
-
-/* 	current = current->next; */
-/*     } */
-
-/*     // in case it was not found */
-/*     return l; */
-/* } */
-
-int item_amount(struct list *l) {
-    int tot = 0;
-    
-    while (l) {
-	tot++;
-	l = l->next;
-    }
-
-    return tot;
+    l->nelem--;
 }

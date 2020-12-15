@@ -66,12 +66,15 @@ aut-id : ID {item = hashmap_search(hashmap, lexval, AUTOMATON);
 	     memset(aut, 0, sizeof (struct automaton));
 	     aut->id = lexval;
 	     
+	     aut->states = list_create();
+	     aut->transitions = list_create();
+	     
 	     hashmap_insert(hashmap,
 			    map_item_create(aut->id, AUTOMATON, aut));
 	     
-	     struct list *l = list_create(aut);
 	     net->aut_amount++;
-	     net->automatons = head_insert(net->automatons, l);}
+	     tail_insert(net->automatons,
+			 list_item_create(aut));}
        ;
 
 	    
@@ -92,8 +95,8 @@ ev-id : ID {item = hashmap_search(hashmap, lexval, EVENT);
 	    hashmap_insert(hashmap,
 			   map_item_create(ev, EVENT, NULL));
 	    
-	    struct list *l = list_create(ev);
-	    net->events = head_insert(net->events, l);}
+	    tail_insert(net->events,
+			list_item_create(ev));}
       ;
 
 
@@ -110,9 +113,9 @@ link : ID {item = hashmap_search(hashmap, lexval, LINK);
 	   hashmap_insert(hashmap,
 			  map_item_create(ln->id, LINK, ln));
 
-	   struct list *l = list_create(ln);
 	   net->lk_amount++;
-	   net->links = head_insert(net->links, l);}
+	   tail_insert(net->links,
+		       list_item_create(ln));}
 
        ID {item = hashmap_search(hashmap, lexval, AUTOMATON);
 
@@ -124,8 +127,8 @@ link : ID {item = hashmap_search(hashmap, lexval, LINK);
 	   // ln initialized in $2
 	   ln->src = aut;
 
-	   /*struct list *l = list_create(ln);
-	     aut->lk_out = head_insert(aut->lk_out, l);*/}
+	   /* aut->lk_out = tail_insert(aut->lk_out,
+				     list_item_create(ln));*/}
 
        ARROW ID {item = hashmap_search(hashmap, lexval, AUTOMATON);
 
@@ -137,8 +140,8 @@ link : ID {item = hashmap_search(hashmap, lexval, LINK);
 	   	 // ln initialized in $2
 	   	 ln->dest = aut;
 		 
-		 /*struct list *l = list_create(ln);
-		   aut->lk_in = head_insert(aut->lk_in, l);*/}
+	         /* aut->lk_out = tail_insert(aut->lk_out,
+				           list_item_create(ln));*/}
        ';'
      ;
 
@@ -161,14 +164,14 @@ aut : AUT ID {item = hashmap_search(hashmap, lexval, AUTOMATON);
       ':' st-list init tr-list END {aut->sttr_hashmap = hashmap_create(hashmap_size);
 	                            hashmap_size = 0;
 				    
-      	  	       	       	    struct list *l = aut->states;
+      	  	       	       	    struct list_item *l = aut->states->head;
 
 				    while (l) {
 					struct state *s = (struct state *) l->value;
 					hashmap_insert(aut->sttr_hashmap,
 						       map_item_create(s->id, STATE, l));
 
-					struct list *lt = s->tr_in;
+					struct list_item *lt = s->tr_in->head;
 
 					while (lt) {
 					    struct transition *t = (struct transition *) lt->value;
@@ -178,7 +181,7 @@ aut : AUT ID {item = hashmap_search(hashmap, lexval, AUTOMATON);
 					    lt = lt->next;
 					}
 
-					lt = s->tr_out;
+					lt = s->tr_out->head;
 
 					while (lt) {
 					    struct transition *t = (struct transition *) lt->value;
@@ -191,7 +194,7 @@ aut : AUT ID {item = hashmap_search(hashmap, lexval, AUTOMATON);
 					l = l->next;
 				    }
 
-				    l = aut->transitions;
+				    l = aut->transitions->head;
 
 				    while (l) {
 					struct transition *t = (struct transition *) l->value;
@@ -219,7 +222,7 @@ st : ID {// aut initialized in rule "aut"
 	 hashmap_insert(hashmap,
 			map_item_create_with_sub(st->id, STATE, st, aut));
 	 
-	 aut->states = head_insert(aut->states, list_create(st));
+	 tail_insert(aut->states, list_item_create(st));
 	 hashmap_size++;}
 
      regexp
@@ -235,7 +238,7 @@ st : ID {// aut initialized in rule "aut"
 	     hashmap_insert(hashmap,
 			    map_item_create_with_sub(st->id, STATE, st, aut));
 	     
-	     aut->states = head_insert(aut->states, list_create(st));
+	     tail_insert(aut->states, list_item_create(st));
 	     hashmap_size++;}
 
      ']' regexp
@@ -295,9 +298,9 @@ tr : ID {item = hashmap_search(hashmap, lexval, TRANSITION);
                // tr initialized in $2
 	       tr->dest = st;
 
-	       tr->src->tr_out = head_insert(tr->src->tr_out, list_create(tr));
-	       tr->dest->tr_in = head_insert(tr->dest->tr_in, list_create(tr));
-	       aut->transitions = head_insert(aut->transitions, list_create(tr));
+	       tail_insert(tr->src->tr_out, list_item_create(tr));
+	       tail_insert(tr->dest->tr_in, list_item_create(tr));
+	       tail_insert(aut->transitions, list_item_create(tr));
 	       hashmap_size += 3;}
      
      obs-decl rel-decl in-decl out-decl ';'
@@ -335,7 +338,7 @@ rel-decl : REL '"' ID {item = hashmap_search(hashmap, lexval, LABEL);
 	       	       tr->rel = lab;}
 	   '"'
 	 | REL '"' DIAG {item = hashmap_search(hashmap, lexval, LABEL);
-	       lab = label_create(lexval, RELEVANCE);
+	                 lab = label_create(lexval, RELEVANCE);
 			 
 	               	 if (item) {
 			     if (item->value != (void *) RELEVANCE)
@@ -387,16 +390,12 @@ out-decl : OUT '"' action-list '"'
 	 ;
 
 action-list : action-list ',' action-out {// act initialized in $1
-                                          struct list *l = list_create(act);
-					  
-					  // tr initialized in rule "tr"
-					  tr->act_out = head_insert(tr->act_out, l);}
+                                          // tr initialized in rule "tr"
+                                          tail_insert(tr->act_out, list_item_create(act));}
 
 	    | action-out {// act initialized in $1
-	      	          struct list *l = list_create(act);
-
-			  // tr initialized in rule "tr"
-			  tr->act_out = head_insert(tr->act_out, l);}
+	      	          // tr initialized in rule "tr"
+			  tail_insert(tr->act_out, list_item_create(act));}
 
 action-out : ID {act = action_create();
 	         item = hashmap_search(hashmap, lexval, EVENT);
@@ -438,8 +437,8 @@ obs-label : ID {item = hashmap_search(hashmap, lexval, LABEL);
 		if (item->value != (void *) OBSERVABILITY)
 		    laberror();    // exits here
 
-		net->observation = head_insert(net->observation,
-					       list_create(label_create(lexval, OBSERVABILITY)));}
+		tail_insert(net->observation,
+			    list_item_create(label_create(lexval, OBSERVABILITY)));}
 	  ;
 
 %%

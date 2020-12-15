@@ -10,7 +10,7 @@ struct list *visited;
 long tr_amount;
 
 struct automaton *get_silent_space(struct automaton *bspace_aut);
-struct automaton *get_silent(struct state *st, int bspace_st_amount);
+struct automaton *get_silent(struct state *st, size_t bspace_st_amount);
 void silent_visit(struct state *st);
 
 
@@ -20,7 +20,7 @@ struct automaton *get_diagnosticator(struct automaton *bspace_aut) {
 
     sspace_aut->id = "dctor";
 
-    struct list *l = sspace_aut->states;
+    struct list_item *l = sspace_aut->states->head;
 
     if (!stop) {
 	/*** foreach sspace state (closure) ***/
@@ -28,7 +28,7 @@ struct automaton *get_diagnosticator(struct automaton *bspace_aut) {
 	    struct state *st = (struct state *) l->value;
 	    struct automaton *closure = (struct automaton *) st->value;
 
-	    struct list *ls = closure->states;
+	    struct list_item *ls = closure->states->head;
 	
 	    /*** mark exit silent states as finals ***/
 	    /*** bspace states remain unaltered ***/
@@ -42,7 +42,7 @@ struct automaton *get_diagnosticator(struct automaton *bspace_aut) {
 	    }
 
 	    /*** compute the split regexp ***/
-	    struct list *exp = get_split_diag(closure);
+	    struct list_item *exp = get_split_diag(closure)->head;
 	
 	    if (!stop) {
 		struct label *cl_regexp = NULL;
@@ -52,7 +52,7 @@ struct automaton *get_diagnosticator(struct automaton *bspace_aut) {
 		while (exp) {
 		    struct transition *tr = (struct transition *) exp->value;
 
-		    struct list *lt = st->tr_out;
+		    struct list_item *lt = st->tr_out->head;
 	    
 		    /*** foreach outgoing transition ***/
 		    while (lt) {
@@ -116,7 +116,7 @@ struct automaton *get_diagnosticator(struct automaton *bspace_aut) {
 }
 
 char *diagnosticate(struct automaton *dctor, struct list *observation) {
-    int sam = item_amount(dctor->states);
+    size_t sam = dctor->states->nelem;
     struct hashmap *s_hashmap = hashmap_create(sam);
 
     struct state *initial = dctor->initial;
@@ -125,7 +125,7 @@ char *diagnosticate(struct automaton *dctor, struct list *observation) {
     hashmap_insert(s_hashmap,
 		   map_item_create(initial->id, STATE, initial));
 
-    struct list *l = get_last(observation);
+    struct list_item *l = observation->head;
     
     /*** foreach label in the observation ***/
     while (l) {
@@ -140,7 +140,7 @@ char *diagnosticate(struct automaton *dctor, struct list *observation) {
 		
 		while (item) {
 		    struct state *st = (struct state *) item->value;
-		    struct list *lt = st->tr_out;
+		    struct list_item *lt = st->tr_out->head;
 
 		    /*** foreach outgoing transition ***/
 		    while (lt) {
@@ -195,7 +195,7 @@ char *diagnosticate(struct automaton *dctor, struct list *observation) {
 	    exit(-1);    // exits here
 	}
 
-	l = l->prev;
+	l = l->next;
     }
 
     struct label *diagnosis = NULL;
@@ -248,19 +248,17 @@ char *diagnosticate(struct automaton *dctor, struct list *observation) {
 
 
 struct automaton *get_silent_space(struct automaton *bspace_aut) {
-    int bspace_st_amount = item_amount(bspace_aut->states);
+    size_t bspace_st_amount = bspace_aut->states->nelem;
     struct automaton *sspace_aut = automaton_create("sspace", 4 * bspace_st_amount);
     struct hashmap *s_hashmap = hashmap_create(bspace_st_amount);
 
-    /*** some lists are cycled in reverse order to make the output automaton prettier ***/
-    
-    struct list *l = get_last(bspace_aut->states);
+    struct list_item *l = bspace_aut->states->head;
 
     /*** foreach bspace state ***/
     while (l) {
 	struct state *st = (struct state *) l->value;
 
-	struct list *lt = st->tr_in;
+	struct list_item *lt = st->tr_in->head;
 	bool obs = false;
 	bool initial = (st == bspace_aut->initial);
 
@@ -295,10 +293,10 @@ struct automaton *get_silent_space(struct automaton *bspace_aut) {
 	if (stop)
 	    break;
 	
-	l = l->prev;
+	l = l->next;
     }
 
-    l = sspace_aut->states;
+    l = sspace_aut->states->head;
 
     if (!stop) {
 	/*** foreach sspace state (closure) ***/
@@ -306,7 +304,7 @@ struct automaton *get_silent_space(struct automaton *bspace_aut) {
 	    struct state *st = (struct state *) l->value;
 	    struct automaton *closure = (struct automaton *) st->value;
 	
-	    struct list *ls = closure->states;
+	    struct list_item *ls = closure->states->head;
 
 	    /*** foreach state in the closure ***/
 	    while (ls) {
@@ -339,13 +337,13 @@ struct automaton *get_silent_space(struct automaton *bspace_aut) {
     }
 
     
-    struct list *lt = get_last(bspace_aut->transitions);
+    l = bspace_aut->transitions->head;
     tr_amount = 0;
 
     if (!stop) {
 	/*** foreach observable bspace transition ***/
-	while (lt) {
-	    struct transition *tr = lt->value;
+	while (l) {
+	    struct transition *tr = l->value;
 
 	    if (tr->obs) {
 		/*** build dest lookup id ***/
@@ -364,11 +362,11 @@ struct automaton *get_silent_space(struct automaton *bspace_aut) {
 		/*** cleanup id ***/
 		free(id);
 
-		struct list *l = get_last(sspace_aut->states);
+		struct list_item *lt = sspace_aut->states->head;
 
 		/*** foreach sspace state (closure) ***/
-		while (l) {
-		    struct state *st = (struct state *) l->value;
+		while (lt) {
+		    struct state *st = (struct state *) lt->value;
 
 		    /*** build src lookup id ***/
 		    char *id = calloc(strlen(st->id) + strlen(tr->src->id) + 2, sizeof (char));
@@ -403,14 +401,14 @@ struct automaton *get_silent_space(struct automaton *bspace_aut) {
 		    if (stop)
 			break;
 
-		    l = l->prev;
+		    lt = lt->next;
 		}
 	    }
 
 	    if (stop)
 		break;
 
-	    lt = lt->prev;
+	    l = l->next;
 	}
     }
 
@@ -421,9 +419,9 @@ struct automaton *get_silent_space(struct automaton *bspace_aut) {
     return sspace_aut;
 }
 
-struct automaton *get_silent(struct state *st, int bspace_st_amount) {
+struct automaton *get_silent(struct state *st, size_t bspace_st_amount) {
     s_aut = automaton_create("silent", 4 * bspace_st_amount);
-    visited = NULL;
+    visited = list_create();
     tr_amount = 0;
 
     /*** create new silent state and insert it ***/
@@ -444,17 +442,19 @@ struct automaton *get_silent(struct state *st, int bspace_st_amount) {
 	silent_visit(st);
 
     /*** reset colors ***/
-    struct list *l = visited;
+    struct list_item *l = visited->head;
     
     if (!stop)
 	while (l) {
 	    struct state *s = (struct state *) l->value;
 	    s->color = WHITE;
 	    
-	    struct list *next = l->next;
+	    struct list_item *next = l->next;
 	    free(l);
 	    l = next;
 	}
+
+    free(visited);
 
     return s_aut;
 }
@@ -463,10 +463,9 @@ void silent_visit(struct state *st) {
     st->color = GRAY;
 
     /*** add state to visited list (to reset colors later) ***/
-    visited = head_insert(visited,
-			  list_create(st));
+    tail_insert(visited, list_item_create(st));
 
-    struct list *l = st->tr_out;
+    struct list_item *l = st->tr_out->head;
 
     while (l) {
 	struct transition *tr = (struct transition *) l->value;

@@ -7,23 +7,27 @@
 #include <stdbool.h>
 
 
-struct list {
+struct list_item {
     void *value;
-    struct list *prev;
-    struct list *next;
+    struct list_item *prev;
+    struct list_item *next;
+};
+
+struct list {
+    struct list_item *head;
+    struct list_item *tail;
+    size_t nelem;
 };
 
 
-struct list *list_create(void *value);
+struct list_item *list_item_create(void *value);
 
-struct list *get_last(struct list *l);
+struct list *list_create();
 
-struct list *head_insert(struct list *l, struct list *item);
+void head_insert(struct list *l, struct list_item *item);
 
-struct list *item_remove(struct list *l, struct list *item);
+void tail_insert(struct list *l, struct list_item *item);
 
-//struct list *search_and_remove(struct list *l, void *value);
-
-int item_amount(struct list *l);
+void item_remove(struct list *l, struct list_item *item);
 
 #endif
