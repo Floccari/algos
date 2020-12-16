@@ -24,8 +24,8 @@ struct state {
     bool exit;
     // 2 bytes
     void *value;    // used to store various pointers
-    struct list *tr_in;
-    struct list *tr_out;
+    struct list tr_in;
+    struct list tr_out;
 };
 
 struct action {
@@ -47,7 +47,7 @@ struct transition {
     char *id;
     void *value;    // used to store various pointers
     struct action *act_in;
-    struct list *act_out;
+    struct list act_out;
     struct label *obs;
     struct label *rel;
     struct state *src;
@@ -56,12 +56,12 @@ struct transition {
 
 struct automaton {
     char *id;
-    struct list *states;
+    struct list states;
     struct state *initial;
-    struct list *transitions;
-    struct hashmap *sttr_hashmap;
-    /*struct list *lk_in;
-      struct list *lk_out;*/
+    struct list transitions;
+    struct hashmap sttr_hashmap;
+    /*struct list lk_in;
+      struct list lk_out;*/
 };
 
 struct link {
@@ -78,7 +78,7 @@ struct context {
     int lk_amount;
     struct state **states;    // current state of every automaton
     char **buffers;    // link buffers
-    struct list_item *current_obs;    // current obs label
+    struct list_item *current_obs;
     int obs_index;    // amount of labels processed so far
     // 4 bytes
 };
@@ -87,10 +87,10 @@ struct network {
     char *id;
     int aut_amount;
     int lk_amount;
-    struct list *automatons;
-    struct list *events;
-    struct list *links;
-    struct list *observation;    // stored in REVERSE ORDER
+    struct list automatons;
+    struct list events;
+    struct list links;
+    struct list observation;
 };
 
 struct state *state_create(char *id);

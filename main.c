@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
     } else if (strcmp(argv[1], "bspace") == 0) {
 
 	struct network *bs_net = network_create("bs_net");
-	tail_insert(bs_net->automatons, list_item_create(bspace_compute(net)));
+	tail_insert(&bs_net->automatons, list_item_create(bspace_compute(net)));
 	bs_net->observation = net->observation;
 
 	if (stop) {
@@ -95,7 +95,7 @@ int main(int argc, char **argv) {
     } else if (strcmp(argv[1], "comp") == 0) {
 
 	struct network *c_net = network_create("comp_net");
-	tail_insert(c_net->automatons, list_item_create(comp_compute(net)));
+	tail_insert(&c_net->automatons, list_item_create(comp_compute(net)));
 	c_net->observation = net->observation;
 
 	if (stop) {
@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
 	
     } else if (strcmp(argv[1], "diag") == 0) {
 
-	struct automaton *aut = (struct automaton *) net->automatons->head->value;
+	struct automaton *aut = (struct automaton *) net->automatons.head->value;
 	char *diagnosis = get_diagnosis(aut);
 	fprintf(stdout, "%s\n", diagnosis);
 	exit(0);
@@ -118,8 +118,8 @@ int main(int argc, char **argv) {
     } else if (strcmp(argv[1], "dctor") == 0) {
 
 	struct network *dctor = network_create("dctor_net");
-	struct automaton *in = (struct automaton *) net->automatons->head->value;
-	tail_insert(dctor->automatons, list_item_create(get_diagnosticator(in)));
+	struct automaton *in = (struct automaton *) net->automatons.head->value;
+	tail_insert(&dctor->automatons, list_item_create(get_diagnosticator(in)));
 	dctor->observation = net->observation;
 
 	if (stop) {
@@ -133,8 +133,8 @@ int main(int argc, char **argv) {
 	
     }  else if (strcmp(argv[1], "dcdiag") == 0) {
 
-	struct automaton *in = (struct automaton *) net->automatons->head->value;
-	char *diagnosis = diagnosticate(in, net->observation);
+	struct automaton *in = (struct automaton *) net->automatons.head->value;
+	char *diagnosis = diagnosticate(in, &net->observation);
 	fprintf(stdout, "%s\n", diagnosis);
 	exit(0);
 	

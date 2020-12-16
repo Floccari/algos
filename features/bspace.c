@@ -42,7 +42,7 @@ struct automaton *compute(struct network *net, bool comp) {
 
     /*** initialize context and assign indexes to the links ***/
     struct context *c = context_create(net->aut_amount, net->lk_amount);
-    struct list_item *l = net->automatons->head;
+    struct list_item *l = net->automatons.head;
     
     for (int i = 0; i < net->aut_amount; i++) {
 	struct automaton *aut = (struct automaton *) l->value;
@@ -51,7 +51,7 @@ struct automaton *compute(struct network *net, bool comp) {
 	l = l->next;
     }
 
-    l = net->links->head;
+    l = net->links.head;
     int index = 0;
     
     while (l) {
@@ -64,7 +64,7 @@ struct automaton *compute(struct network *net, bool comp) {
     memset(c->buffers, 0, sizeof (char *) * net->lk_amount);
     
     c->id = context_id_create(c);
-    c->current_obs = net->observation->head;
+    c->current_obs = net->observation.head;
 
     /*** create initial state and insert it ***/
     struct state *st = state_create(state_id_create(st_amount++));
@@ -105,7 +105,7 @@ void step(struct state *current_bs_state) {
     /*** foreach current state ***/
     for (int i = 0; i < c->aut_amount; i++) {
 	struct state *st = c->states[i];
-	struct list_item *l = st->tr_out->head;
+	struct list_item *l = st->tr_out.head;
 
 	/*** foreach outgoing transition ***/	
 	while (l) {
@@ -124,7 +124,7 @@ void step(struct state *current_bs_state) {
 		    new_context->buffers[a->link->index] = NULL;
 		}
 
-		struct list_item *ls = tr->act_out->head;
+		struct list_item *ls = tr->act_out.head;
 
 		/*** update output links, abort if one of them is full ***/
 		while (ls) {
@@ -233,7 +233,7 @@ void step(struct state *current_bs_state) {
 }
 
 void prune(struct automaton *aut) {
-    struct list_item *l = aut->states->head;
+    struct list_item *l = aut->states.head;
 
     /*** color states ***/
     while (l) {
@@ -248,7 +248,7 @@ void prune(struct automaton *aut) {
 	    break;
     }
 
-    l = aut->states->head;
+    l = aut->states.head;
 
     /*** prune states ***/
     while (l) {
@@ -274,7 +274,7 @@ void prune(struct automaton *aut) {
 void dfs_visit(struct state *source) {
     source->color = GRAY;
 
-    struct list_item *l = source->tr_in->head;    // since we are going backwards
+    struct list_item *l = source->tr_in.head;    // since we are going backwards
 
     while (l) {
 	struct transition *tr = (struct transition *) l->value;

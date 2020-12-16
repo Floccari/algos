@@ -36,10 +36,16 @@ struct map_item *map_item_create(char *id, enum types type, void *value);
 
 struct map_item *map_item_create_with_sub(char *id, enum types type, void *value, void *subvalue);
 
+// allocate both hashmap and buffer
 struct hashmap *hashmap_create(size_t nelem);
+
+void hashmap_buffer_allocate(struct hashmap *hashmap, size_t nelem);
+
+void hashmap_buffer_deallocate(struct hashmap *hashmap);
 
 void hashmap_empty(struct hashmap *hashmap, bool free_ids);
 
+// free both hashmap and buffer
 void hashmap_destroy(struct hashmap *hashmap);
 
 void hashmap_insert(struct hashmap *hashmap, struct map_item *item);

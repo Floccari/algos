@@ -21,18 +21,27 @@ struct map_item *map_item_create_with_sub(char *id, enum types type, void *value
 
 struct hashmap *hashmap_create(size_t nelem) {
     struct hashmap *hashmap = malloc(sizeof (struct hashmap));
-//    memset(item, 0, sizeof (struct hashmap));
+//    memset(hashmap, 0, sizeof (struct hashmap));
 
+    hashmap_buffer_allocate(hashmap, nelem);
+    return hashmap;
+}
+
+void hashmap_buffer_allocate(struct hashmap *hashmap, size_t nelem) {
     hashmap->buffer = calloc(nelem, sizeof (struct map_item *));
 
     if (!hashmap->buffer) {
 	fprintf(stderr, "memory allocation failed during hashmap creation, exiting...\n");
 	exit(-1);
     }
+    
     memset(hashmap->buffer, 0, nelem * sizeof (struct map_item *));
     hashmap->nelem = nelem;
+}
 
-    return hashmap;
+void hashmap_buffer_deallocate(struct hashmap *hashmap) {
+    free(hashmap->buffer);
+    memset(hashmap, 0, sizeof (struct hashmap));
 }
 
 void hashmap_empty(struct hashmap *hashmap, bool free_ids) {
