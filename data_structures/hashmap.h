@@ -50,12 +50,24 @@ void hashmap_destroy(struct hashmap *hashmap);
 
 void hashmap_insert(struct hashmap *hashmap, struct map_item *item);
 
-struct map_item *hashmap_search(struct  hashmap *hashmap, char *id, enum types type);
+/*** compare pointers ***/
+
+struct map_item *hashmap_search(struct hashmap *hashmap, char *id, enum types type);
 
 struct map_item *hashmap_search_with_sub(struct hashmap *hashmap, char *id, enum types type, void *sub);
 
 struct map_item *hashmap_search_and_remove(struct hashmap *hashmap, char *id, enum types type);
 
 struct map_item *hashmap_search_with_sub_and_remove(struct hashmap *hashmap, char *id, enum types type, void *sub);
+
+/*** compare strings ***/
+
+struct map_item *hashmap_strcmp_search(struct hashmap *hashmap, char *id, enum types type);
+
+struct map_item *hashmap_strcmp_search_with_sub(struct hashmap *hashmap, char *id, enum types type, void *sub);
+
+struct map_item *hashmap_strcmp_search_and_remove(struct hashmap *hashmap, char *id, enum types type);
+
+struct map_item *hashmap_strcmp_search_with_sub_and_remove(struct hashmap *hashmap, char *id, enum types type, void *sub);
 
 #endif

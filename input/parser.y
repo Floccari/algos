@@ -57,7 +57,7 @@ aut-id-list : aut-id-list ',' aut-id
 	    | aut-id
       	    ;
 
-aut-id : ID {item = hashmap_search(hashmap, lexval, AUTOMATON);
+aut-id : ID {item = hashmap_strcmp_search(hashmap, lexval, AUTOMATON);
 
 	     if (item)
 		 duperror();    // exits here
@@ -83,7 +83,7 @@ ev-id-list : ev-id-list ',' ev-id
 	   | ev-id
 	   ;
 
-ev-id : ID {item = hashmap_search(hashmap, lexval, EVENT);
+ev-id : ID {item = hashmap_strcmp_search(hashmap, lexval, EVENT);
 
 	    if (item)
 		duperror();    // exits here
@@ -101,7 +101,7 @@ link-list : link-list link
 	  | {/* eps */}
 	  ;
 
-link : ID {item = hashmap_search(hashmap, lexval, LINK);
+link : ID {item = hashmap_strcmp_search(hashmap, lexval, LINK);
 
        	   if (item)
 	       duperror();    // exits here
@@ -114,7 +114,7 @@ link : ID {item = hashmap_search(hashmap, lexval, LINK);
 	   tail_insert(&net->links,
 		       list_item_create(ln));}
 
-       ID {item = hashmap_search(hashmap, lexval, AUTOMATON);
+       ID {item = hashmap_strcmp_search(hashmap, lexval, AUTOMATON);
 
        	   if (!item)
 	       nferror();    // exits here
@@ -127,7 +127,7 @@ link : ID {item = hashmap_search(hashmap, lexval, LINK);
 	   /*tail_insert(&aut->lk_out,
 		       list_item_create(ln));*/}
 
-       ARROW ID {item = hashmap_search(hashmap, lexval, AUTOMATON);
+       ARROW ID {item = hashmap_strcmp_search(hashmap, lexval, AUTOMATON);
 
         	 if (!item)
 	       	    nferror();    // exits here
@@ -146,7 +146,7 @@ aut-decl : aut-decl aut
 	 | aut
 	 ;
 
-aut : AUT ID {item = hashmap_search(hashmap, lexval, AUTOMATON);
+aut : AUT ID {item = hashmap_strcmp_search(hashmap, lexval, AUTOMATON);
 
       	      if (!item)
 		  nferror();    // exits here
@@ -210,7 +210,7 @@ st-id-list : st-id-list ',' st
 	   ;
 
 st : ID {// aut initialized in rule "aut"
-     	 item = hashmap_search_with_sub(hashmap, lexval, STATE, aut);
+     	 item = hashmap_strcmp_search_with_sub(hashmap, lexval, STATE, aut);
 
 	 if (item)
 	     duperror();    // exits here
@@ -225,7 +225,7 @@ st : ID {// aut initialized in rule "aut"
      regexp
 	   
    | '[' ID {// aut initialized in rule "aut"
-             item = hashmap_search_with_sub(hashmap, lexval, STATE, aut);
+             item = hashmap_strcmp_search_with_sub(hashmap, lexval, STATE, aut);
 
 	     if (item)
 		 duperror();    // exits here
@@ -250,7 +250,7 @@ regexp : '"' ID {// st initialized in rule "st"
        | {/* eps */}
        ;
 
-init : INIT ':' ID {item = hashmap_search_with_sub(hashmap, lexval, STATE, aut);
+init : INIT ':' ID {item = hashmap_strcmp_search_with_sub(hashmap, lexval, STATE, aut);
 
        	    	    if (!item)
 			nferror();    // exits here
@@ -264,7 +264,7 @@ tr-list : tr-list tr
 	| {/* eps */}
 	;
 
-tr : ID {item = hashmap_search(hashmap, lexval, TRANSITION);
+tr : ID {item = hashmap_strcmp_search(hashmap, lexval, TRANSITION);
 
        	   if (item)
 	       duperror();    // exits here
@@ -274,7 +274,7 @@ tr : ID {item = hashmap_search(hashmap, lexval, TRANSITION);
 			  map_item_create(tr->id, TRANSITION, tr));}
 
      ID {// aut initialized in rule "aut"
-     	 item = hashmap_search_with_sub(hashmap, lexval, STATE, aut);
+     	 item = hashmap_strcmp_search_with_sub(hashmap, lexval, STATE, aut);
 
 	 if (!item)
 	     nferror();    // exits here
@@ -285,7 +285,7 @@ tr : ID {item = hashmap_search(hashmap, lexval, TRANSITION);
 	 tr->src = st;}
 
      ARROW ID {// aut initialized in rule "aut"
-     	       item = hashmap_search_with_sub(hashmap, lexval, STATE, aut);
+     	       item = hashmap_strcmp_search_with_sub(hashmap, lexval, STATE, aut);
 
 	       if (!item)
 		   nferror();    // exits here
@@ -303,7 +303,7 @@ tr : ID {item = hashmap_search(hashmap, lexval, TRANSITION);
      obs-decl rel-decl in-decl out-decl ';'
    ;
 
-obs-decl : OBS '"' ID {item = hashmap_search(hashmap, lexval, LABEL);
+obs-decl : OBS '"' ID {item = hashmap_strcmp_search(hashmap, lexval, LABEL);
 	               lab = label_create(lexval, OBSERVABILITY);
 		       
 	               if (item) {
@@ -320,7 +320,7 @@ obs-decl : OBS '"' ID {item = hashmap_search(hashmap, lexval, LABEL);
 	 | {/* eps */}
 	 ;
 
-rel-decl : REL '"' ID {item = hashmap_search(hashmap, lexval, LABEL);
+rel-decl : REL '"' ID {item = hashmap_strcmp_search(hashmap, lexval, LABEL);
 	               lab = label_create(lexval, RELEVANCE);
 					   
 	               if (item) {
@@ -334,7 +334,7 @@ rel-decl : REL '"' ID {item = hashmap_search(hashmap, lexval, LABEL);
 	       	       // tr initialized in rule "tr"
 	       	       tr->rel = lab;}
 	   '"'
-	 | REL '"' DIAG {item = hashmap_search(hashmap, lexval, LABEL);
+	 | REL '"' DIAG {item = hashmap_strcmp_search(hashmap, lexval, LABEL);
 	                 lab = label_create(lexval, RELEVANCE);
 			 
 	               	 if (item) {
@@ -359,14 +359,14 @@ in-decl : IN '"' action-in {// tr initialized in rule "tr"
 	;
 
 action-in : ID {act = action_create();
-	        item = hashmap_search(hashmap, lexval, EVENT);
+	        item = hashmap_strcmp_search(hashmap, lexval, EVENT);
 
 		if (!item)
 		    nferror();    // exits here
 	     
 		act->event = item->id;}
 
-	    '[' ID {item = hashmap_search(hashmap, lexval, LINK);
+	    '[' ID {item = hashmap_strcmp_search(hashmap, lexval, LINK);
 
 	     	    if (!item)
 			nferror();    // exits here
@@ -395,14 +395,14 @@ action-list : action-list ',' action-out {// act initialized in $1
 			  tail_insert(&tr->act_out, list_item_create(act));}
 
 action-out : ID {act = action_create();
-	         item = hashmap_search(hashmap, lexval, EVENT);
+	         item = hashmap_strcmp_search(hashmap, lexval, EVENT);
 
 		 if (!item)
 		     nferror();    // exits here
 		 
 		 act->event = item->id;}
 
-	     '[' ID {item = hashmap_search(hashmap, lexval, LINK);
+	     '[' ID {item = hashmap_strcmp_search(hashmap, lexval, LINK);
 
 	     	     if (!item)
 			 nferror();    // exits here
@@ -426,7 +426,7 @@ obs-label-list : obs-label-list ',' obs-label
 	       | obs-label
 	       ;
 
-obs-label : ID {item = hashmap_search(hashmap, lexval, LABEL);
+obs-label : ID {item = hashmap_strcmp_search(hashmap, lexval, LABEL);
 
       	        if (!item)
 		    nferror();    // exits here

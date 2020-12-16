@@ -224,7 +224,7 @@ void phase_two(struct automaton *aut, bool split) {
 	
 	strcat(lookup, tr1->dest->id);
 
-	struct map_item *item = hashmap_search_with_sub(tr_hashmap, lookup, TRANSITION, tr1->value);
+	struct map_item *item = hashmap_strcmp_search_with_sub(tr_hashmap, lookup, TRANSITION, tr1->value);
 
 	if (item) {
 		/*** save pointer to next transition ***/

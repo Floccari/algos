@@ -169,7 +169,7 @@ void step(struct state *current_bs_state) {
 		new_tr->rel = label_copy(tr->rel);
 
 		/*** check if we already visited this context ***/
-		struct map_item *item = hashmap_search(ct_hashmap, new_context->id, CONTEXT);
+		struct map_item *item = hashmap_strcmp_search(ct_hashmap, new_context->id, CONTEXT);
 	    
 		if (item) {
 		    context_destroy(new_context);
