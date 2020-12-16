@@ -214,14 +214,7 @@ void phase_two(struct automaton *aut, bool split) {
 	struct transition *tr1 = (struct transition *) l->value;
 
 	/*** create look-up id ***/
-	char *lookup;
-	
-	if (split && tr1->value) {
-	    struct state *st = (struct state *) tr1->value;
-	    lookup = calloc(strlen(tr1->src->id) + strlen(tr1->dest->id) + strlen(st->id) + 3,
-				  sizeof (char));
-	} else
-	    lookup = calloc(strlen(tr1->src->id) + strlen(tr1->dest->id) + 2, sizeof (char));
+	char *lookup = calloc(strlen(tr1->src->id) + strlen(tr1->dest->id) + 2, sizeof (char));
 	
 	strcpy(lookup, tr1->src->id);
 
@@ -231,17 +224,7 @@ void phase_two(struct automaton *aut, bool split) {
 	
 	strcat(lookup, tr1->dest->id);
 
-	if (split && tr1->value) {
-	    struct state *st = (struct state *) tr1->value;
-
-	    p += strlen(tr1->dest->id);
-	    *p++ = '#';
-	    *p = '\0';	
-	    
-	    strcat(lookup, st->id);
-	}
-
-	struct map_item *item = hashmap_search(tr_hashmap, lookup, TRANSITION);
+	struct map_item *item = hashmap_search_with_sub(tr_hashmap, lookup, TRANSITION, tr1->value);
 
 	if (item) {
 		/*** save pointer to next transition ***/
@@ -266,7 +249,7 @@ void phase_two(struct automaton *aut, bool split) {
 		transition_destroy(tr1);
 	} else {
 	    hashmap_insert(tr_hashmap,
-			   map_item_create(lookup, TRANSITION, tr1));
+			   map_item_create_with_sub(lookup, TRANSITION, tr1, tr1->value));
 
 	    l = l->next;
 	}

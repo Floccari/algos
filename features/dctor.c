@@ -311,17 +311,8 @@ struct automaton *get_silent_space(struct automaton *bspace_aut) {
 		struct state *s_st = (struct state *) ls->value;
 
 		/*** add st to the hashmap ***/
-		char *id = calloc(strlen(st->id) + strlen(s_st->id) + 2, sizeof (char));
-		strcpy(id, st->id);
-
-		char *p = id + strlen(st->id);
-		*p++ = '#';
-		*p++ = '\0';	
-	    
-		strcat(id, s_st->id);
-
 		hashmap_insert(s_hashmap,
-			       map_item_create(id, STATE, st));
+			       map_item_create_with_sub(s_st->id, STATE, st, st->id));
 
 		if (stop)
 		    break;
@@ -346,21 +337,8 @@ struct automaton *get_silent_space(struct automaton *bspace_aut) {
 	    struct transition *tr = l->value;
 
 	    if (tr->obs) {
-		/*** build dest lookup id ***/
-		char *id = calloc((2 * strlen(tr->dest->id)) + 2, sizeof (char));
-		strcpy(id, tr->dest->id);
-
-		char *p = id + strlen(tr->dest->id);
-		*p++ = '#';
-		*p++ = '\0';
-	    
-		strcat(id, tr->dest->id);
-
-		struct map_item *item = hashmap_search(s_hashmap, id, STATE);
+		struct map_item *item = hashmap_search_with_sub(s_hashmap, tr->dest->id, STATE, tr->dest->id);
 		struct state *dest = (struct state *) item->value;
-
-		/*** cleanup id ***/
-		free(id);
 
 		struct list_item *lt = sspace_aut->states.head;
 
@@ -368,17 +346,7 @@ struct automaton *get_silent_space(struct automaton *bspace_aut) {
 		while (lt) {
 		    struct state *st = (struct state *) lt->value;
 
-		    /*** build src lookup id ***/
-		    char *id = calloc(strlen(st->id) + strlen(tr->src->id) + 2, sizeof (char));
-		    strcpy(id, st->id);
-
-		    char *p = id + strlen(st->id);
-		    *p++ = '#';
-		    *p++ = '\0';
-		
-		    strcat(id, tr->src->id);
-
-		    item = hashmap_search(s_hashmap, id, STATE);
+		    item = hashmap_search_with_sub(s_hashmap, tr->src->id, STATE, st->id);
 
 		    if (item) {
 			struct state *src = (struct state *) item->value;
@@ -395,9 +363,6 @@ struct automaton *get_silent_space(struct automaton *bspace_aut) {
 			transition_attach(sspace_aut, s_tr);
 		    }
 		    
-		    /*** cleanup id ***/
-		    free(id);
-
 		    if (stop)
 			break;
 
@@ -413,7 +378,7 @@ struct automaton *get_silent_space(struct automaton *bspace_aut) {
     }
 
     /*** cleanup ***/
-    hashmap_empty(s_hashmap, true);
+    hashmap_empty(s_hashmap, false);
     hashmap_destroy(s_hashmap);
     
     return sspace_aut;
