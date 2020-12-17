@@ -67,16 +67,16 @@ void hashmap_destroy(struct hashmap *hashmap) {
     free(hashmap);
 }
 
-int hash(char *id, size_t m) {
+size_t hash(char *id, size_t m) {
     size_t h = 0;
-    float a = 0.618034;    // (sqrt(5) - 1) / 2;
+    double a = 0.618033988749895;    // (sqrt(5) - 1) / 2;
     char k;
     
     while ((k = *id++)) {
-	float term, fract, integ;
+	double term, fract, integ;
 	
-	term = ((h << 6) + k) * a;
-	fract = modff(term, &integ);
+	term = ((h << 5) + k) * a;
+	fract = modf(term, &integ);
 	
 	h = fract * m;
     }
