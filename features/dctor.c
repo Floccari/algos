@@ -283,8 +283,7 @@ struct automaton *get_silent_space(struct automaton *bspace_aut) {
 
 	if (initial || obs) {
 	    /*** compute the silent closure of the current state ***/
-	    struct automaton *closure = get_silent(st,
-						   (bspace_st_amount + bspace_tr_amount));
+	    struct automaton *closure = get_silent(st, (bspace_st_amount));
 
 	    /*** create a new state in the silent space ***/
 	    struct state *s_st = state_create(st->id);
