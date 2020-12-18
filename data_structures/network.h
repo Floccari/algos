@@ -147,6 +147,6 @@ struct label *label_alt_create(struct label *lab1, struct label *lab2);
 
 struct label *label_cat_auto_create(struct label *lab1, struct label *lab_auto, struct label *lab2);
 
-size_t maximum_state_amount(struct network *net);
+size_t context_amount_estimate(struct network *net);
 
 #endif

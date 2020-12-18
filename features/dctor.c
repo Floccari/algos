@@ -10,7 +10,7 @@ struct list *visited;
 long tr_amount;
 
 struct automaton *get_silent_space(struct automaton *bspace_aut);
-struct automaton *get_silent(struct state *st, size_t bspace_st_amount);
+struct automaton *get_silent(struct state *st, size_t estimated_size);
 void silent_visit(struct state *st);
 
 
@@ -62,7 +62,12 @@ struct automaton *get_diagnosticator(struct automaton *bspace_aut) {
 			if (ts->value == tr->value) {
 
 			    /*** concatenate regexp with ts->rel ***/
-			    ts->rel = label_cat_create(tr->rel, ts->rel);
+			    struct label *lab = label_cat_create(tr->rel, ts->rel);
+			    
+			    if (ts->rel && ts->rel != lab)
+				label_destroy(ts->rel);
+
+			    ts->rel = lab;
 			}
 
 			if (stop)
@@ -249,7 +254,9 @@ char *diagnosticate(struct automaton *dctor, struct list *observation) {
 
 struct automaton *get_silent_space(struct automaton *bspace_aut) {
     size_t bspace_st_amount = bspace_aut->states.nelem;
-    struct automaton *sspace_aut = automaton_create("sspace", 4 * bspace_st_amount);
+    size_t bspace_tr_amount = bspace_aut->transitions.nelem;
+    
+    struct automaton *sspace_aut = automaton_create("sspace", bspace_st_amount + bspace_tr_amount);
     struct hashmap *s_hashmap = hashmap_create(bspace_st_amount);
 
     struct list_item *l = bspace_aut->states.head;
@@ -276,7 +283,8 @@ struct automaton *get_silent_space(struct automaton *bspace_aut) {
 
 	if (initial || obs) {
 	    /*** compute the silent closure of the current state ***/
-	    struct automaton *closure = get_silent(st, bspace_st_amount);
+	    struct automaton *closure = get_silent(st,
+						   (bspace_st_amount + bspace_tr_amount));
 
 	    /*** create a new state in the silent space ***/
 	    struct state *s_st = state_create(st->id);
@@ -384,8 +392,8 @@ struct automaton *get_silent_space(struct automaton *bspace_aut) {
     return sspace_aut;
 }
 
-struct automaton *get_silent(struct state *st, size_t bspace_st_amount) {
-    s_aut = automaton_create("silent", 4 * bspace_st_amount);
+struct automaton *get_silent(struct state *st, size_t estimated_size) {
+    s_aut = automaton_create("silent", estimated_size);
     visited = list_create();
     tr_amount = 0;
 

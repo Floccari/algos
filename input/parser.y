@@ -29,9 +29,8 @@ struct label *lab = NULL;
 
 struct map_item *item = NULL;
 struct hashmap *hashmap;
-size_t hashmap_size;
 
-#define SYMBOL_TABLE_SIZE 1000
+#define SYMBOL_TABLE_SIZE 5000
 
 %}
 
@@ -115,6 +114,7 @@ link : ID {item = hashmap_strcmp_search(hashmap, lexval, LINK);
 		       list_item_create(ln));}
 
        ID {item = hashmap_strcmp_search(hashmap, lexval, AUTOMATON);
+	   free(lexval);
 
        	   if (!item)
 	       nferror();    // exits here
@@ -128,6 +128,7 @@ link : ID {item = hashmap_strcmp_search(hashmap, lexval, LINK);
 		       list_item_create(ln));*/}
 
        ARROW ID {item = hashmap_strcmp_search(hashmap, lexval, AUTOMATON);
+	         free(lexval);
 
         	 if (!item)
 	       	    nferror();    // exits here
@@ -147,6 +148,7 @@ aut-decl : aut-decl aut
 	 ;
 
 aut : AUT ID {item = hashmap_strcmp_search(hashmap, lexval, AUTOMATON);
+	      free(lexval);
 
       	      if (!item)
 		  nferror();    // exits here
@@ -155,11 +157,10 @@ aut : AUT ID {item = hashmap_strcmp_search(hashmap, lexval, AUTOMATON);
 		  duperror();    //exits here
 	      
 	      item->subvalue = (void *) 1;
-	      aut = (struct automaton *) item->value;
-              hashmap_size = 0;}
+	      aut = (struct automaton *) item->value;}
 
-      ':' st-list init tr-list END {hashmap_buffer_allocate(&aut->sttr_hashmap, hashmap_size);
-	                            hashmap_size = 0;
+      ':' st-list init tr-list END {hashmap_buffer_allocate(&aut->sttr_hashmap,
+							    aut->states.nelem + aut->transitions.nelem);
 				    
       	  	       	       	    struct list_item *l = aut->states.head;
 
@@ -219,8 +220,7 @@ st : ID {// aut initialized in rule "aut"
 	 hashmap_insert(hashmap,
 			map_item_create_with_sub(st->id, STATE, st, aut));
 	 
-	 tail_insert(&aut->states, list_item_create(st));
-	 hashmap_size++;}
+	 tail_insert(&aut->states, list_item_create(st));}
 
      regexp
 	   
@@ -235,8 +235,7 @@ st : ID {// aut initialized in rule "aut"
 	     hashmap_insert(hashmap,
 			    map_item_create_with_sub(st->id, STATE, st, aut));
 	     
-	     tail_insert(&aut->states, list_item_create(st));
-	     hashmap_size++;}
+	     tail_insert(&aut->states, list_item_create(st));}
 
      ']' regexp
    ;
@@ -251,6 +250,7 @@ regexp : '"' ID {// st initialized in rule "st"
        ;
 
 init : INIT ':' ID {item = hashmap_strcmp_search_with_sub(hashmap, lexval, STATE, aut);
+	            free(lexval);
 
        	    	    if (!item)
 			nferror();    // exits here
@@ -275,6 +275,7 @@ tr : ID {item = hashmap_strcmp_search(hashmap, lexval, TRANSITION);
 
      ID {// aut initialized in rule "aut"
      	 item = hashmap_strcmp_search_with_sub(hashmap, lexval, STATE, aut);
+	 free(lexval);
 
 	 if (!item)
 	     nferror();    // exits here
@@ -286,6 +287,7 @@ tr : ID {item = hashmap_strcmp_search(hashmap, lexval, TRANSITION);
 
      ARROW ID {// aut initialized in rule "aut"
      	       item = hashmap_strcmp_search_with_sub(hashmap, lexval, STATE, aut);
+	       free(lexval);
 
 	       if (!item)
 		   nferror();    // exits here
@@ -297,8 +299,7 @@ tr : ID {item = hashmap_strcmp_search(hashmap, lexval, TRANSITION);
 
 	       tail_insert(&tr->src->tr_out, list_item_create(tr));
 	       tail_insert(&tr->dest->tr_in, list_item_create(tr));
-	       tail_insert(&aut->transitions, list_item_create(tr));
-	       hashmap_size += 3;}
+	       tail_insert(&aut->transitions, list_item_create(tr));}
      
      obs-decl rel-decl in-decl out-decl ';'
    ;
@@ -360,6 +361,7 @@ in-decl : IN '"' action-in {// tr initialized in rule "tr"
 
 action-in : ID {act = action_create();
 	        item = hashmap_strcmp_search(hashmap, lexval, EVENT);
+		free(lexval);
 
 		if (!item)
 		    nferror();    // exits here
@@ -367,6 +369,7 @@ action-in : ID {act = action_create();
 		act->event = item->id;}
 
 	    '[' ID {item = hashmap_strcmp_search(hashmap, lexval, LINK);
+		    free(lexval);
 
 	     	    if (!item)
 			nferror();    // exits here
@@ -396,6 +399,7 @@ action-list : action-list ',' action-out {// act initialized in $1
 
 action-out : ID {act = action_create();
 	         item = hashmap_strcmp_search(hashmap, lexval, EVENT);
+		 free(lexval);
 
 		 if (!item)
 		     nferror();    // exits here
@@ -403,6 +407,7 @@ action-out : ID {act = action_create();
 		 act->event = item->id;}
 
 	     '[' ID {item = hashmap_strcmp_search(hashmap, lexval, LINK);
+		     free(lexval);
 
 	     	     if (!item)
 			 nferror();    // exits here

@@ -853,19 +853,21 @@ struct label *label_cat_auto_create(struct label *lab1, struct label *lab_auto, 
     return label_create(id, RELEVANCE);
 }
 
-size_t maximum_state_amount(struct network *net) {
-    size_t max = 0;
+size_t context_amount_estimate(struct network *net) {
+    size_t ct_amount = 1;
     struct list_item *la = net->automatons.head;
 
     while (la) {
 	struct automaton *aut = (struct automaton *) la->value;
-	size_t tot = aut->states.nelem;
-
-	if (tot > max)
-	    max = tot;
+	ct_amount *= aut->states.nelem;
 	
 	la = la->next;
     }
 
-    return max;
+    // this is an euristic, not the maximum amount
+
+    ct_amount *= net->links.nelem;
+    ct_amount *= net->events.nelem;
+    
+    return ct_amount;
 }

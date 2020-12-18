@@ -1,7 +1,5 @@
 #include "hashmap.h"
 
-#include <math.h>
-
 struct map_item *map_item_create(char *id, enum types type, void *value) {
     struct map_item *item = malloc(sizeof (struct map_item));
     memset(item, 0, sizeof (struct map_item));
@@ -73,12 +71,10 @@ size_t hash(char *id, size_t m) {
     char k;
     
     while ((k = *id++)) {
-	double term, fract, integ;
+	double term = ((h << 5) + k) * a;
+	term -= (long) term;    // get fractional part
 	
-	term = ((h << 5) + k) * a;
-	fract = modf(term, &integ);
-	
-	h = fract * m;
+	h = term * m;
     }
 
     return  h;
