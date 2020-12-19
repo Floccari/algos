@@ -97,6 +97,9 @@ struct state *state_create(char *id);
 
 void state_attach(struct automaton *aut, struct state *st);
 
+// also add to sttr_hashmap
+void state_attach_sttr(struct automaton *aut, struct state *st);
+
 void state_detach(struct automaton *aut, struct state *st);
 
 struct action *action_create();
@@ -113,9 +116,17 @@ void transition_destroy(struct transition *tr);
 
 void transition_attach(struct automaton *aut, struct transition *tr);
 
+// also add to sttr_hashmap
+void transition_attach_sttr(struct automaton *aut, struct transition *tr);
+
 void transition_detach(struct automaton *aut, struct transition *tr);
 
-struct automaton *automaton_create(char *id, int hashmap_size);
+struct automaton *automaton_create(char *id);
+
+// also initialize sttr_hashmap
+struct automaton *automaton_create_sttr(char *id, int hashmap_size);
+
+void sttr_hashmap_fill(struct automaton *aut);
 
 struct link *link_create(char *id);
 

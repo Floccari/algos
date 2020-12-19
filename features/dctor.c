@@ -10,7 +10,7 @@ struct list *visited;
 long tr_amount;
 
 struct automaton *get_silent_space(struct automaton *bspace_aut);
-struct automaton *get_silent(struct state *st, size_t estimated_size);
+struct automaton *get_silent(struct state *st);
 void silent_visit(struct state *st);
 
 
@@ -42,6 +42,7 @@ struct automaton *get_diagnosticator(struct automaton *bspace_aut) {
 	    }
 
 	    /*** compute the split regexp ***/
+	    sttr_hashmap_fill(closure);
 	    struct list_item *exp = get_split_diag(closure)->head;
 	
 	    if (!stop) {
@@ -254,9 +255,8 @@ char *diagnosticate(struct automaton *dctor, struct list *observation) {
 
 struct automaton *get_silent_space(struct automaton *bspace_aut) {
     size_t bspace_st_amount = bspace_aut->states.nelem;
-    size_t bspace_tr_amount = bspace_aut->transitions.nelem;
     
-    struct automaton *sspace_aut = automaton_create("sspace", bspace_st_amount + bspace_tr_amount);
+    struct automaton *sspace_aut = automaton_create("sspace");
     struct hashmap *s_hashmap = hashmap_create(bspace_st_amount);
 
     struct list_item *l = bspace_aut->states.head;
@@ -283,7 +283,7 @@ struct automaton *get_silent_space(struct automaton *bspace_aut) {
 
 	if (initial || obs) {
 	    /*** compute the silent closure of the current state ***/
-	    struct automaton *closure = get_silent(st, (bspace_st_amount));
+	    struct automaton *closure = get_silent(st);
 
 	    /*** create a new state in the silent space ***/
 	    struct state *s_st = state_create(st->id);
@@ -391,8 +391,8 @@ struct automaton *get_silent_space(struct automaton *bspace_aut) {
     return sspace_aut;
 }
 
-struct automaton *get_silent(struct state *st, size_t estimated_size) {
-    s_aut = automaton_create("silent", estimated_size);
+struct automaton *get_silent(struct state *st) {
+    s_aut = automaton_create("silent");
     visited = list_create();
     tr_amount = 0;
 

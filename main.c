@@ -111,6 +111,8 @@ int main(int argc, char **argv) {
     } else if (strcmp(argv[1], "diag") == 0) {
 
 	struct automaton *aut = (struct automaton *) net->automatons.head->value;
+	sttr_hashmap_fill(aut);
+	
 	char *diagnosis = get_diagnosis(aut);
 	fprintf(stdout, "%s\n", diagnosis);
 	exit(0);

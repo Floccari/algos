@@ -30,7 +30,7 @@ struct label *lab = NULL;
 struct map_item *item = NULL;
 struct hashmap *hashmap;
 
-#define SYMBOL_TABLE_SIZE 5000
+#define SYMBOL_TABLE_SIZE 10000
 
 %}
 
@@ -61,9 +61,7 @@ aut-id : ID {item = hashmap_strcmp_search(hashmap, lexval, AUTOMATON);
 	     if (item)
 		 duperror();    // exits here
 	     
-	     aut = malloc(sizeof (struct automaton));
-	     memset(aut, 0, sizeof (struct automaton));
-	     aut->id = lexval;
+	     aut = automaton_create(lexval);
 	     
 	     hashmap_insert(hashmap,
 			    map_item_create(aut->id, AUTOMATON, aut));
@@ -159,48 +157,7 @@ aut : AUT ID {item = hashmap_strcmp_search(hashmap, lexval, AUTOMATON);
 	      item->subvalue = (void *) 1;
 	      aut = (struct automaton *) item->value;}
 
-      ':' st-list init tr-list END {hashmap_buffer_allocate(&aut->sttr_hashmap,
-							    aut->states.nelem + aut->transitions.nelem);
-				    
-      	  	       	       	    struct list_item *l = aut->states.head;
-
-				    while (l) {
-					struct state *s = (struct state *) l->value;
-					hashmap_insert(&aut->sttr_hashmap,
-						       map_item_create(s->id, STATE, l));
-
-					struct list_item *lt = s->tr_in.head;
-
-					while (lt) {
-					    struct transition *t = (struct transition *) lt->value;
-					    hashmap_insert(&aut->sttr_hashmap,
-							   map_item_create_with_sub(t->id, TRANSITION,
-										    lt, (void *) TR_IN));
-					    lt = lt->next;
-					}
-
-					lt = s->tr_out.head;
-
-					while (lt) {
-					    struct transition *t = (struct transition *) lt->value;
-					    hashmap_insert(&aut->sttr_hashmap,
-							   map_item_create_with_sub(t->id, TRANSITION,
-										    lt, (void *) TR_OUT));
-					    lt = lt->next;
-					}
-					
-					l = l->next;
-				    }
-
-				    l = aut->transitions.head;
-
-				    while (l) {
-					struct transition *t = (struct transition *) l->value;
-					hashmap_insert(&aut->sttr_hashmap,
-						       map_item_create_with_sub(t->id, TRANSITION,
-										l, (void *) TR));
-					l = l->next;
-				    }}
+      ':' st-list init tr-list END
     ;
 
 st-list : STS ':' st-id-list ';'
@@ -220,7 +177,7 @@ st : ID {// aut initialized in rule "aut"
 	 hashmap_insert(hashmap,
 			map_item_create_with_sub(st->id, STATE, st, aut));
 	 
-	 tail_insert(&aut->states, list_item_create(st));}
+	 state_attach(aut, st);}
 
      regexp
 	   
@@ -235,7 +192,7 @@ st : ID {// aut initialized in rule "aut"
 	     hashmap_insert(hashmap,
 			    map_item_create_with_sub(st->id, STATE, st, aut));
 	     
-	     tail_insert(&aut->states, list_item_create(st));}
+	     state_attach(aut, st);}
 
      ']' regexp
    ;
@@ -297,9 +254,7 @@ tr : ID {item = hashmap_strcmp_search(hashmap, lexval, TRANSITION);
                // tr initialized in $2
 	       tr->dest = st;
 
-	       tail_insert(&tr->src->tr_out, list_item_create(tr));
-	       tail_insert(&tr->dest->tr_in, list_item_create(tr));
-	       tail_insert(&aut->transitions, list_item_create(tr));}
+	       transition_attach(aut, tr);}
      
      obs-decl rel-decl in-decl out-decl ';'
    ;

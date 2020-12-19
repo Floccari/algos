@@ -13,13 +13,19 @@ void state_attach(struct automaton *aut, struct state *st) {
     struct list_item *l = list_item_create(st);
 
     tail_insert(&aut->states, l);
+}
+
+void state_attach_sttr(struct automaton *aut, struct state *st) {
+    struct list_item *l = list_item_create(st);
+
+    tail_insert(&aut->states, l);
     hashmap_insert(&aut->sttr_hashmap,
 		   map_item_create(st->id, STATE, l));
 }
 
 void state_detach(struct automaton *aut, struct state *st) {
     struct list_item *ls = st->tr_in.head;
-    
+
     /*** remove all incoming transitions ***/
     while (ls) {
 	struct transition *tr = (struct transition *) ls->value;
@@ -41,6 +47,11 @@ void state_detach(struct automaton *aut, struct state *st) {
     }
 
     /*** remove state from the automaton ***/
+    if (!aut->sttr_hashmap.buffer) {
+	fprintf(stderr, "automaton %s: sttr_hashmap not initialized\n", aut->id);
+	exit(-1);
+    }
+    
     struct map_item *item = hashmap_search_and_remove(&aut->sttr_hashmap, st->id, STATE);
     ls = (struct list_item *) item->value;
     
@@ -115,6 +126,22 @@ void transition_attach(struct automaton *aut, struct transition *tr) {
     struct state *st = tr->src;
 
     tail_insert(&st->tr_out, l);
+
+    l = list_item_create(tr);
+    st = tr->dest;
+
+    tail_insert(&st->tr_in, l);
+
+    /*** add to the automaton ***/
+    l = list_item_create(tr);
+    tail_insert(&aut->transitions, l);
+}
+
+void transition_attach_sttr(struct automaton *aut, struct transition *tr) {
+    struct list_item *l = list_item_create(tr);
+    struct state *st = tr->src;
+
+    tail_insert(&st->tr_out, l);
     hashmap_insert(&aut->sttr_hashmap,
 		   map_item_create_with_sub(tr->id, TRANSITION, l, (void *) TR_OUT));    
 
@@ -133,6 +160,11 @@ void transition_attach(struct automaton *aut, struct transition *tr) {
 }
 
 void transition_detach(struct automaton *aut, struct transition *tr) {
+    if (!aut->sttr_hashmap.buffer) {
+	fprintf(stderr, "automaton %s: sttr_hashmap not initialized\n", aut->id);
+	exit(-1);
+    }
+    
     struct map_item *item = hashmap_search_with_sub_and_remove(&aut->sttr_hashmap, tr->id,
 								TRANSITION, (void *) TR_OUT);
     struct list_item *l = (struct list_item *) item->value;
@@ -161,13 +193,66 @@ void transition_detach(struct automaton *aut, struct transition *tr) {
     free(item);
 }
 
-struct automaton *automaton_create(char *id, int hashmap_size) {
+struct automaton *automaton_create(char *id) {
+    struct automaton *aut = malloc(sizeof (struct automaton));
+    memset(aut, 0, sizeof (struct automaton));
+    aut->id = id;
+
+    return aut;
+}
+
+struct automaton *automaton_create_sttr(char *id, int hashmap_size) {
     struct automaton *aut = malloc(sizeof (struct automaton));
     memset(aut, 0, sizeof (struct automaton));
     aut->id = id;
     hashmap_buffer_allocate(&aut->sttr_hashmap, hashmap_size);
 
     return aut;
+}
+
+void sttr_hashmap_fill(struct automaton *aut) {
+    hashmap_buffer_allocate(&aut->sttr_hashmap,
+			    aut->states.nelem + aut->transitions.nelem);
+				    
+    struct list_item *l = aut->states.head;
+
+    while (l) {
+	struct state *s = (struct state *) l->value;
+	hashmap_insert(&aut->sttr_hashmap,
+		       map_item_create(s->id, STATE, l));
+
+	struct list_item *lt = s->tr_in.head;
+
+	while (lt) {
+	    struct transition *t = (struct transition *) lt->value;
+	    hashmap_insert(&aut->sttr_hashmap,
+			   map_item_create_with_sub(t->id, TRANSITION,
+						    lt, (void *) TR_IN));
+	    lt = lt->next;
+	}
+
+	lt = s->tr_out.head;
+
+	while (lt) {
+	    struct transition *t = (struct transition *) lt->value;
+	    hashmap_insert(&aut->sttr_hashmap,
+			   map_item_create_with_sub(t->id, TRANSITION,
+						    lt, (void *) TR_OUT));
+	    lt = lt->next;
+	}
+					
+	l = l->next;
+    }
+
+    l = aut->transitions.head;
+
+    while (l) {
+	struct transition *t = (struct transition *) l->value;
+	hashmap_insert(&aut->sttr_hashmap,
+		       map_item_create_with_sub(t->id, TRANSITION,
+						l, (void *) TR));
+	l = l->next;
+    }
 }
 
 struct link *link_create(char *id) {
@@ -327,8 +412,6 @@ void network_serialize(FILE *fc, struct network *net) {
 
     while(l) {
 	struct automaton *aut = (struct automaton *) l->value;
-	long st_amount = 0;
-	long tr_amount = 0;
 
 	fprintf(fc, "\n");
 	fprintf(fc, "automaton %s:\n", aut->id);
@@ -339,7 +422,6 @@ void network_serialize(FILE *fc, struct network *net) {
 
 	if (ls) {
 	    struct state *s = (struct state *) ls->value;
-	    st_amount++;
 
 	    if (s->final)
 		fprintf(fc, "[%s]", s->id);
@@ -353,7 +435,6 @@ void network_serialize(FILE *fc, struct network *net) {
     
 	    while (ls) {
 		struct state *s = (struct state *) ls->value;
-		st_amount++;
 		
 		if (s->final)
 		    fprintf(fc, ", [%s]", s->id);
@@ -379,7 +460,6 @@ void network_serialize(FILE *fc, struct network *net) {
 
 	while (ls) {
 	    struct transition *tr = (struct transition *) ls->value;
-	    tr_amount++;
 	    
 	    fprintf(fc, "\t%s %s -> %s", tr->id, tr->src->id, tr->dest->id);
 
@@ -419,7 +499,7 @@ void network_serialize(FILE *fc, struct network *net) {
 	    ls = ls->next;
 	}
 
-	fprintf(fc, "end\t# states: %li, transitions: %li\n", st_amount, tr_amount);
+	fprintf(fc, "end\t# states: %li, transitions: %li\n", aut->states.nelem, aut->transitions.nelem);
 
 	l = l->next;
     }

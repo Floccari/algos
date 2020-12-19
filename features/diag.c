@@ -50,13 +50,13 @@ void do_regexp(struct automaton *aut, bool split) {
     /*** add new initial state ***/
     init = state_create("_init");
 
-    state_attach(aut, init);
+    state_attach_sttr(aut, init);
 	
     struct transition *tr = transition_create(univ_tr_id_create(tr_amount++));    
 
     tr->src = init;
     tr->dest = aut->initial;
-    transition_attach(aut, tr);
+    transition_attach_sttr(aut, tr);
 
     aut->initial = init;
 
@@ -64,7 +64,7 @@ void do_regexp(struct automaton *aut, bool split) {
     struct list_item *l = aut->states.head;
     fin = state_create("_fin");
 
-    state_attach(aut, fin);
+    state_attach_sttr(aut, fin);
 
     while (l) {
 	struct state *st = (struct state *) l->value;
@@ -74,7 +74,7 @@ void do_regexp(struct automaton *aut, bool split) {
 	    
 	    tr->src = st;
 	    tr->dest = fin;
-	    transition_attach(aut, tr);
+	    transition_attach_sttr(aut, tr);
 	}
 
 	l = l->next;
@@ -194,7 +194,7 @@ void phase_one(struct automaton *aut, bool split) {
 	    state_detach(aut, st);
 	    free(st);
 
-	    transition_attach(aut, tr);
+	    transition_attach_sttr(aut, tr);
 	} else
 	    l = l->next;
 
@@ -322,7 +322,7 @@ void phase_three(struct automaton *aut, bool split) {
 		    }
 
 		    /*** attach the transition ***/
-		    transition_attach(aut, tr);
+		    transition_attach_sttr(aut, tr);
 		    
 		    if (stop)
 			break;

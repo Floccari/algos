@@ -33,9 +33,9 @@ struct automaton *compute(struct network *net, bool comp) {
     tr_amount = 0;
 
     if (comp)
-	bs_aut = automaton_create("comp", 4 * ct_amount);
+	bs_aut = automaton_create("comp");
     else
-	bs_aut = automaton_create("bspace", 4 * ct_amount);
+	bs_aut = automaton_create("bspace");
 
     /*** initialize context and assign indexes to the links ***/
     struct context *c = context_create(net->aut_amount, net->lk_amount);
@@ -231,6 +231,9 @@ void step(struct state *current_bs_state) {
 
 void prune(struct automaton *aut) {
     struct list_item *l = aut->states.head;
+
+    /*** init sttr_hashmap ***/
+    sttr_hashmap_fill(aut);
 
     /*** color states ***/
     while (l) {
