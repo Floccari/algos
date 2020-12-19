@@ -20,6 +20,12 @@ void handler(int signal_number) {
     stop = 1;
 }
 
+void read_network() {
+    yyparse();
+    hashmap_empty(hashmap, false);
+    hashmap_destroy(hashmap);
+}
+
 
 int main(int argc, char **argv) {
     FILE *fc;
@@ -60,24 +66,22 @@ int main(int argc, char **argv) {
 	yyset_in(fc);
     }
 
-    /*** parse input network ***/
-    yyparse();
-    hashmap_empty(hashmap, false);
-    hashmap_destroy(hashmap);
-
     /*** actions ***/
     if (strcmp(argv[1], "test") == 0) {
 
+	read_network();	
 	network_serialize(stdout, net);
 	exit(0);
 	
     } else if (strcmp(argv[1], "dot") == 0) {
 
+	read_network();	
 	network_to_dot(stdout, net);
 	exit(0);
 	
     } else if (strcmp(argv[1], "bspace") == 0) {
 
+	read_network();	
 	struct network *bs_net = network_create("bs_net");
 	tail_insert(&bs_net->automatons, list_item_create(bspace_compute(net)));
 	bs_net->observation = net->observation;
@@ -94,6 +98,7 @@ int main(int argc, char **argv) {
 	
     } else if (strcmp(argv[1], "comp") == 0) {
 
+	read_network();	
 	struct network *c_net = network_create("comp_net");
 	tail_insert(&c_net->automatons, list_item_create(comp_compute(net)));
 	c_net->observation = net->observation;
@@ -110,6 +115,7 @@ int main(int argc, char **argv) {
 	
     } else if (strcmp(argv[1], "diag") == 0) {
 
+	read_network();	
 	struct automaton *aut = (struct automaton *) net->automatons.head->value;
 	sttr_hashmap_fill(aut);
 	
@@ -119,6 +125,7 @@ int main(int argc, char **argv) {
 	
     } else if (strcmp(argv[1], "dctor") == 0) {
 
+	read_network();	
 	struct network *dctor = network_create("dctor_net");
 	struct automaton *in = (struct automaton *) net->automatons.head->value;
 	tail_insert(&dctor->automatons, list_item_create(get_diagnosticator(in)));
@@ -135,6 +142,7 @@ int main(int argc, char **argv) {
 	
     }  else if (strcmp(argv[1], "dcdiag") == 0) {
 
+	read_network();	
 	struct automaton *in = (struct automaton *) net->automatons.head->value;
 	char *diagnosis = diagnosticate(in, &net->observation);
 	fprintf(stdout, "%s\n", diagnosis);
