@@ -18,7 +18,7 @@ init -> initial: id;
 tr-list -> tr-list tr | eps
 tr -> id id -> id obs-decl rel-decl in-decl out-decl;
 obs-decl -> obs " id " | eps
-rel-decl -> rel " id " | eps
+rel-decl -> rel " id " | rel " diag " | eps
 in-decl -> in " action-in " | eps
 action-in -> id [ id ]
 out-decl -> out " action-list " | eps
