@@ -1,4 +1,4 @@
-network net:
+network n1:
 	automatons: c2, c3;
 	events: e2, e3;
 

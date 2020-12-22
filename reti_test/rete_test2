@@ -1,4 +1,4 @@
-network rete3:
+network n2:
 	automatons: s, b;
 	events: op, cl;
 
