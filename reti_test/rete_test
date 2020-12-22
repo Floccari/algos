@@ -1,4 +1,4 @@
-network n1:
+network rete_test:
 	automatons: c2, c3;
 	events: e2, e3;
 
