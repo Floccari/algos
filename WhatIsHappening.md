@@ -39,3 +39,4 @@ automaton networks and stuff
 * Aggiunto il comando dcdiag per calcolare la diagnosi usando il diagnosticatore **(pseudocodice)**
 * Piccole modifiche/correzioni
 * Possibilità di interrompere l'esecuzione (Ctrl + C) mostrando risultati parziali (se disponibili)
+* Nuovo comando load che carica la rete senza stamparla, utile per misurare il tempo di caricamento
