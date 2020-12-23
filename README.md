@@ -18,7 +18,8 @@ Usage:
 
 Actions:
 	help    Show this help message
-	test    Test network loading and serialization
+	load    Load network then exit
+        test    Test network loading and serialization
 	dot     Output dot representation of the network
 
 	bspace  Compute the behavioral space of the network
