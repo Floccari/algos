@@ -48,6 +48,7 @@ int main(int argc, char **argv) {
 	printf("\n");
 	printf("Actions:\n");
 	printf("\thelp\tShow this help message\n");
+	printf("\tload\tLoad network then exit\n");	
 	printf("\ttest\tTest network loading and serialization\n");
 	printf("\tdot\tOutput dot representation of the network\n");
 	printf("\n");
@@ -67,7 +68,12 @@ int main(int argc, char **argv) {
     }
 
     /*** actions ***/
-    if (strcmp(argv[1], "test") == 0) {
+    if (strcmp(argv[1], "load") == 0) {
+
+	read_network();	
+	exit(0);
+	
+    } else if (strcmp(argv[1], "test") == 0) {
 
 	read_network();	
 	network_serialize(stdout, net);
