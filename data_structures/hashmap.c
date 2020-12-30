@@ -33,7 +33,6 @@ void hashmap_buffer_allocate(struct hashmap *hashmap, size_t nelem) {
 	exit(-1);
     }
     
-    memset(hashmap->buffer, 0, nelem * sizeof (struct map_item *));
     hashmap->nelem = nelem;
 }
 
