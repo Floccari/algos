@@ -1,6 +1,7 @@
 # algos
 Diagnose an automaton network given a linear observation
 
+\
 ***Dependencies***
 * Flex
 * Bison
