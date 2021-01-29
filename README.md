@@ -1,20 +1,20 @@
 # algos
-automaton networks and stuff
+Diagnose an automaton network given a linear observation
 
-***Requisiti***
+***Dependencies***
 * Flex
 * Bison
 
-***Compilazione***
+***Build***
 ```bash
 cd algos
 make
 ```
 
-***Funzionalità***
+***Usage***
 ```
 Usage:
-	./program action [file_in]
+	algos action [file_in]
 
 Actions:
 	help    Show this help message
@@ -30,20 +30,28 @@ Actions:
 
 ```
 
-***Esempi***
-* Calcolare lo spazio comportamentale di una rete relativo ad un'osservazione lineare (specificata in coda alla rete) e produrre una diagnosi
+***Offline approach***
+* Compute the behavioral subspace of a network, using the linear observation specified in the file.
 ```bash
-./program comp reti_test/rete_test | ./program diag
+./algos comp test/test_network > cm
 ```
-* Costruire il diagnosticatore relativo ad una rete e salvarlo su file
+* Use the generated subspace to output a diagnosis. 
 ```bash
-./program bspace reti_test/rete_test | ./program dctor > diagnosticatore
+./algos diag cm
 ```
-* Utilizzare il diagnosticatore ottenuto per produrre una diagnosi data un'osservazione lineare (specificata in coda al diagnosticatore)
+
+***Online approach***
+* Perform some preprocessing on the network. The resulting automaton (diagnosticator) is observation independent.
 ```bash
-./program dcdiag diagnosticatore
+./algos bspace test/test_network | ./algos dctor > dc
 ```
-* Produrre un file .pdf che rappresenta una rete / spazio comportamentale / diagnosticatore **(richiede un compilatore dot e.g. graphviz)**
+* Now diagnose the network, using the diagnosticator and the observation specified in the same file. You can edit the observation without repeating the preprocessing step.
 ```bash
-./program dot reti_test/rete_test | dot -Tpdf -o rete.pdf
+./algos dcdiag dc
+```
+
+***Dot***
+* You can use the dot command to convert networks, behavioral spaces/subspaces and diagnosticators. The output can then be converted to different formats with a dot compiler (e.g. graphviz).
+```bash
+./algos dot test/test_network | dot -Tpdf -o test.network.pdf
 ```
