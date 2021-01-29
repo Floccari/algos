@@ -5,6 +5,7 @@ Diagnose an automaton network given a linear observation
 * Flex
 * Bison
 
+\
 ***Build***
 ```bash
 cd algos
