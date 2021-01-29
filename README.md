@@ -10,7 +10,7 @@ Diagnose an automaton network given a linear observation
 cd algos
 make
 ```
-
+\
 ***Usage***
 ```
 Usage:
@@ -29,7 +29,7 @@ Actions:
 	dcdiag	Output a diagnosis given a diagnosticator and an observation
 
 ```
-
+\
 ***Offline approach***
 * Compute the behavioral subspace of a network, using the linear observation specified in the file.
 ```bash
@@ -39,7 +39,7 @@ Actions:
 ```bash
 ./algos diag cm
 ```
-
+\
 ***Online approach***
 * Perform some preprocessing on the network. The resulting automaton (diagnosticator) is observation independent.
 ```bash
@@ -49,9 +49,9 @@ Actions:
 ```bash
 ./algos dcdiag dc
 ```
-
+\
 ***Dot***
 * You can use the dot command to convert networks, behavioral spaces/subspaces and diagnosticators. The output can then be converted to different formats with a dot compiler (e.g. graphviz).
 ```bash
-./algos dot test/test_network | dot -Tpdf -o test.network.pdf
+./algos dot test/test_network | dot -Tpdf -o test_network.pdf
 ```
